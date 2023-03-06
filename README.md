@@ -2,7 +2,7 @@
 tested on a TFT display with a 1.8-inch ST7789 driver
 
 Connection:
-  Display:
+  Display:\n
     GND        -> GND
     CS         -> 10
     RESET      -> 8
