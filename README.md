@@ -1,5 +1,6 @@
 # Ray cast arduino
-tested on a TFT display with a 1.8-inch ST7789 driver
+Tested on a 1.8-inch TFT display with ST7789 driver running Arduino Mega 2560<br/>
+***Works on SPI***
 
 Connection:
   - Display:
@@ -16,3 +17,5 @@ Connection:
     - VRX -> A1
     - VRY -> A0
     - SW  -> 22
+
+Adjust the Width and Height settings to suit your display
