@@ -5,11 +5,11 @@ void movePlayer() {
 
   // Moving
   if(paddleY > 0) {
-    x += -speed * cos(angle);
-    y += -speed * sin(angle);
+    x += -moveSpeed * (millis() - dFpsTime) / 200 * cos(angle);
+    y += -moveSpeed * (millis() - dFpsTime) / 200 * sin(angle);
   } else if(paddleY < 0) {
-    x += speed * cos(angle);
-    y += speed * sin(angle);
+    x += moveSpeed * (millis() - dFpsTime)  / 200 * cos(angle);
+    y += moveSpeed * (millis() - dFpsTime)  / 200 * sin(angle);
   }
-  angle -= paddleX / 10;
+  angle -= paddleX * rotateSpeed * (millis() - dFpsTime);
 }

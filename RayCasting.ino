@@ -1,11 +1,9 @@
-float oldWalls[NumRays][4];
+int oldWalls[NumRays][3];
 
-void RayCast() {
+void RayCast(bool isClearDisplay) {
   // Init
-  float xo = x;
-  float yo = y;
-  int xm = ((int)(xo / Tile)) * Tile;
-  int ym = ((int)(yo / Tile)) * Tile;
+  byte xm = ((int)(x / Tile)) * Tile;
+  byte ym = ((int)(y / Tile)) * Tile;
   float cur_angle = angle - HalfFow;
   
   // For through the rays
@@ -16,7 +14,8 @@ void RayCast() {
     if(cos_a == 0) cos_a = 0.000001;
 
     // verticals
-    float dx, px;
+    int px;
+    int8_t dx;
     byte texture_v;
     if(cos_a >= 0) {
       px = xm + Tile;
@@ -26,21 +25,21 @@ void RayCast() {
       dx = -1;
     }
     float depth_v, yv;
-    bool isMax_v = false;
     for(byte i = 0; i < MaxDepth; i += Tile) {
-        depth_v = (px - xo) / cos_a;
-        yv = yo + depth_v * sin_a;
-        int8_t tile_v = isInMap(((int)((px + dx) / Tile)) * Tile, ((int)(yv / Tile)) * Tile);
+        depth_v = (px - x) / cos_a;
+        yv = y + depth_v * sin_a;
+        int tile_v = isInMap(byte((px + dx) / Tile) * Tile, byte(yv / Tile) * Tile);
         if(tile_v != -1) {
           texture_v = Map[tile_v].color;
           break;
         }
         px += dx * Tile;
-        if(i + 1 == MaxDepth) isMax_v = true;
+        if(i + Tile == MaxDepth) texture_v = 3;
     }
     
     // horizontals
-    float py, dy;
+    int py;
+    int8_t dy;
     byte texture_h;
     if(sin_a >= 0) {
       py = ym + Tile;
@@ -50,102 +49,84 @@ void RayCast() {
       dy = -1;
     }
     float depth_h, xh;
-    bool isMax_h;
     for(byte i = 0; i < MaxDepth; i += Tile) {
-        depth_h = (py - yo) / sin_a;
-        xh = xo + depth_h * cos_a;
-        int8_t tile_h = isInMap(((int)(xh / Tile)) * Tile, ((int)((py + dy) / Tile)) * Tile);
+        depth_h = (py - y) / sin_a;
+        xh = x + depth_h * cos_a;
+        int tile_h = isInMap(byte(xh / Tile) * Tile, byte((py + dy) / Tile) * Tile);
         if(tile_h != -1) {
           texture_h = Map[tile_h].color;
           break;
         }
         py += dy * Tile;
-        if(i + 1 == MaxDepth) isMax_h = true;
+        if(i + Tile == MaxDepth) texture_h = 3;
+        if(depth_h > depth_v) break;
     }
 
-    // projection
-    float depth, offset;
-    byte texture;
-    float wallColor = -1;
+    // Projection
+    float depth;
+    byte texture, wallColor;
     if(depth_v < depth_h) {
       depth = depth_v;
-      offset = yv;
       texture = texture_v;
-      if(isMax_v) wallColor = 0;
     }
     else {
       depth = depth_h;
-      offset = xh;
       texture = texture_h;
-      if(isMax_h) wallColor = 0;
     }
     depth *= cos(angle - cur_angle);
     if(depth < 0.00001) depth = 0.00001;
-    offset = ((int)offset) % Tile;
     int proect_height = (int)(PrectCoeff / depth);
     if(proect_height > 2 * Height) proect_height = 2 * Height;
-    float c = 255 / (1 + depth * depth * 0.00002);
-    if(wallColor == -1) wallColor = map(depth, MaxDepth, 0, 0, 255);
+    wallColor = map(depth, MaxDepth, 0, 0, 255);
     
     if(Is3D && (
       oldWalls[ray][0] != ray * Scale ||
       oldWalls[ray][1] != round(Height / 2) - round(proect_height / 2) ||
-      oldWalls[ray][2] != Scale ||
-      oldWalls[ray][3] != proect_height
+      oldWalls[ray][2] != proect_height ||
+      isClearDisplay
     )) {
-      // Computing voidColor
-      byte voidColor[4];
-      if(oldWalls[ray][1] < Height / 2) {
-        voidColor[0] = SkyColor3D[0];
-        voidColor[1] = SkyColor3D[1];
-        voidColor[2] = SkyColor3D[2];
-      } else {
-        voidColor[0] = FlorColor3D[0];
-        voidColor[1] = FlorColor3D[1];
-        voidColor[2] = FlorColor3D[2];
-      }
-      
       // We fill the voids
-      TFTscreen.fill(voidColor[0], voidColor[1], voidColor[2]);
-      TFTscreen.rect(oldWalls[ray][0], oldWalls[ray][1], oldWalls[ray][2], oldWalls[ray][3]);
+      if(oldWalls[ray][1] < Height / 2) TFTscreen.fill(SkyColor3D[0], SkyColor3D[1], SkyColor3D[2]);
+      else TFTscreen.fill(FlorColor3D[0], FlorColor3D[1], FlorColor3D[2]);
+      TFTscreen.rect(oldWalls[ray][0], oldWalls[ray][1], Scale, oldWalls[ray][2]);
 
-      // if the filled void is below half the screen, fill with earth (voidColor correction)
-      if(oldWalls[ray][1] + oldWalls[ray][3] > Height / 2) {
+      // if the filled void is below half the screen, fill with ground (voidColor correction)
+      if(oldWalls[ray][1] + oldWalls[ray][2] > Height / 2) {
         TFTscreen.fill(FlorColor3D[0], FlorColor3D[1], FlorColor3D[2]);
-        TFTscreen.rect(oldWalls[ray][0], round(Height / 2), oldWalls[ray][2], oldWalls[ray][3]);
+        TFTscreen.rect(oldWalls[ray][0], round(Height / 2), Scale, oldWalls[ray][2]);
       }
       
       // Render of new walls
       if(texture == 0) TFTscreen.fill(wallColor, 0, 0);
       else if(texture == 1) TFTscreen.fill(0, wallColor, 0);
       else if(texture == 2) TFTscreen.fill(0, 0, wallColor);
+      else if(texture == 3) TFTscreen.fill(0, 0, 0);
       TFTscreen.rect(ray * Scale, round(Height / 2) - round(proect_height / 2), Scale, proect_height);
-    } else if(!Is3D && (oldWalls[ray][0] != xo || oldWalls[ray][1] != yo || oldWalls[ray][2] != xo + depth * cos_a || oldWalls[ray][3] != yo + depth * sin_a)) {
-      // Look line
-      TFTscreen.drawLine(oldWalls[ray][0] / Tile * (Width / MapRows), oldWalls[ray][1] / Tile * (Width / MapRows), oldWalls[ray][2] / Tile * (Width / MapRows), oldWalls[ray][3] / Tile * (Width / MapRows), TFTscreen.Color565(0, 0, 0));
-      TFTscreen.drawLine(xo / Tile * (Width / MapRows), yo / Tile * (Width / MapRows), (xo + depth * cos_a) / Tile * (Width / MapRows), (yo + depth * sin_a) / Tile * (Width / MapRows), TFTscreen.Color565(PlayerLookLineColor[0], PlayerLookLineColor[1], PlayerLookLineColor[2]));
-    }
-
-    // Remember the walls
-    if(Is3D) {
+      
+      // Remember the walls
       oldWalls[ray][0] = ray * Scale;
       oldWalls[ray][1] = round(Height / 2) - round(proect_height / 2);
-      oldWalls[ray][2] = Scale;
-      oldWalls[ray][3] = proect_height;
-    } else {
-      oldWalls[ray][0] = xo;
-      oldWalls[ray][1] = yo;
-      oldWalls[ray][2] = xo + depth * cos(cur_angle);
-      oldWalls[ray][3] = yo + depth * sin(cur_angle);
+      oldWalls[ray][2] = proect_height;
     }
     
     cur_angle += DeltaAngle;
   }
 }
 
-int8_t isInMap(int x, int y) {
-  for(byte i = 0; i < wallsCount; i++) {
-    if(Map[i].x == x && Map[i].y == y) return i;
+int isInMap(byte x, byte y) {
+  byte left = 0;
+  byte right = wallsCount - 1;
+  byte mid;
+  
+  while (left <= right) {
+    mid = (left + right) / 2;
+    
+    byte mTileX = byte(Map[mid].x / Tile) * Tile;
+    byte mTileY = byte(Map[mid].y / Tile) * Tile;
+    
+    if (mTileX == x && mTileY == y) return mid;
+    if((mTileX == x && mTileY > y) || mTileX > x) right = mid - 1;
+    else left = mid + 1;
   }
   return -1;
 }
