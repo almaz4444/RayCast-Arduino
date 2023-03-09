@@ -13,4 +13,4 @@ Connection:
   - Joystick:
     - VCC -> 5V
     - GND -> GND
-    - SW -> A3 | A4
+    - SW  -> 22
