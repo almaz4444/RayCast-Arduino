@@ -13,4 +13,6 @@ Connection:
   - Joystick:
     - VCC -> 5V
     - GND -> GND
+    - VRX -> A1
+    - VRY -> A0
     - SW  -> 22
