@@ -1,15 +1,25 @@
 void movePlayer() {
   // Reading joysticks
-  float paddleX = (analogRead(JoyY_Pin) - 1064 / 2) / 320;
-  float paddleY = (analogRead(JoyX_Pin) - 1064 / 2) / 320;
+  int paddleX = (analogRead(JoyY_Pin) - 532) >> 5;
+  int8_t paddleY = (analogRead(JoyX_Pin) - 520) * 0.002;
 
-  // Moving
-  if(paddleY > 0) {
-    x += -moveSpeed * (millis() - dFpsTime) / 200 * cos(angle);
-    y += -moveSpeed * (millis() - dFpsTime) / 200 * sin(angle);
-  } else if(paddleY < 0) {
-    x += moveSpeed * (millis() - dFpsTime)  / 200 * cos(angle);
-    y += moveSpeed * (millis() - dFpsTime)  / 200 * sin(angle);
-  }
-  angle -= paddleX * rotateSpeed * (millis() - dFpsTime);
+  if(paddleY > 0) paddleX = -paddleX;
+
+  // Moving       430, 368
+  byte dTimeMovement = millis() - dFpsTime;
+  byte step = int(moveSpeed * dTimeMovement) >> 1;
+  int8_t cos_step = step * cos(angle);
+  int8_t sin_step = step * sin(angle);
+  x -= paddleY * cos_step * 0.01;
+  y -= paddleY * sin_step * 0.01;
+  angle -= paddleX * 0.1 * rotateSpeed * dTimeMovement;
+
+  collision(paddleY * cos_step, paddleY * sin_step);
+}
+
+void collision(int8_t cos_step, int8_t sin_step) {
+  if(isInMap(byte(x - playerSize) >> BitTile, byte(y) >> BitTile) != -1 && cos_step > 0) x += cos_step * 0.01;
+  else if(isInMap(byte(x + playerSize) >> BitTile, byte(y) >> BitTile) != -1 && cos_step < 0) x += cos_step * 0.01;
+  if(isInMap(byte(x) >> BitTile, byte(y - playerSize) >> BitTile) != -1 && sin_step > 0) y += sin_step * 0.01;
+  else if(isInMap(byte(x) >> BitTile, byte(y + playerSize) >> BitTile) != -1 && sin_step < 0) y += sin_step * 0.01;
 }
