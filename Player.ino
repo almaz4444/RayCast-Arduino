@@ -7,12 +7,13 @@ void movePlayer() {
 
   // Moving       430, 368
   byte dTimeMovement = millis() - dFpsTime;
-  byte step = int(moveSpeed * dTimeMovement) >> 1;
+    
+  float step = moveSpeed * dTimeMovement;
   int8_t cos_step = step * cos(angle);
   int8_t sin_step = step * sin(angle);
   x -= paddleY * cos_step * 0.01;
   y -= paddleY * sin_step * 0.01;
-  angle -= paddleX * 0.1 * rotateSpeed * dTimeMovement;
+  angle -= paddleX * rotateSpeed / 10.0 * dTimeMovement;
 
   collision(paddleY * cos_step, paddleY * sin_step);
 }

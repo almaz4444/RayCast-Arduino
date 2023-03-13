@@ -31,8 +31,8 @@
 
 // Player
 #define playerSize 1
-#define moveSpeed 0.5
-#define rotateSpeed 1 / 1500
+#define moveSpeed 0.3
+#define rotateSpeed 1 / 2500.0
 
 // Control
 #define JoyX_Pin A1
@@ -73,8 +73,8 @@ const String StringMap[] {
   "B B  RRR BB R RB",
   "B BR        R  B",
   "B G  G   GGGR  B",
-  "B    R   R   B B",
-  "R R  RBBBB R.  W",
+  "B    R   R   G B",
+  "R R  RBBBB R.  G",
   "R  BB       R  R",
   "R     GG RRRR GR",
   "R GRRR   B  R  R",
@@ -85,13 +85,35 @@ const String StringMap[] {
   "R         RR G R",
   "RRRRRRRRRRRRRRRR",
 };
+// const String StringMap[] {
+//   "BBBBBBBBBBBBBBBB",
+//   "B              B",
+//   "B              B",
+//   "B              B",
+//   "B              B",
+//   "B              B",
+//   "B              B",
+//   "B              B",
+//   "B              B",
+//   "B     .        B",
+//   "R              G",
+//   "R              R",
+//   "R              R",
+//   "R              R",
+//   "R              R",
+//   "R              R",
+//   "R              R",
+//   "R              R",
+//   "R              R",
+//   "RRRRRRRRRRRRRRRR",
+// };
 
 Brick* Map = malloc(MapRows * MapColumns * sizeof(Brick));
 
 // ________Init________
 const TFT TFTscreen = TFT(cs, dc, rst);
 
-float x, y;
+float x, y, z;
 float angle = 1.5708;
 
 bool Is3D = true;
@@ -144,8 +166,6 @@ void loop() {
         DrawFPS(true);
       } else isButtonPinClicked = true;
     }
-
-    // Serial.println(millis() - dFpsTime);
 
     // FPS counter
     if (tick < millis() - 1000) {

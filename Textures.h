@@ -1,6 +1,9 @@
 const byte TextureTile = 4;
 
 const String WallTexture[] {
-  "WRBG",
-  "WRBG",
+  "WGWGW",
+  "GWGWG",
+  "WGWGW",
+  "GWGWG",
+  "WGWGW"
 };

@@ -14,10 +14,10 @@ void RayCast(bool isClearDisplay) {
     if(sin_a == 0) sin_a = 0.000001;
     if(cos_a == 0) cos_a = 0.000001;
 
-    // verticals        160 mcs
-    byte px;
-    int8_t dx;
-    byte texture_v;
+    // verticals & horizontals       160 mcs
+    byte px, py;
+    int8_t dx, dy;
+    byte texture_v, texture_h;
     if(cos_a >= 0) {
       px = xm + Tile;
       dx = 1;
@@ -25,25 +25,6 @@ void RayCast(bool isClearDisplay) {
       px = xm;
       dx = -1;
     }
-    float depth_v;
-    byte yv;
-    for(byte i = 0; i < MaxDepth >> BitTile; i++) {
-        depth_v = (px - x) / cos_a;
-        yv = y + depth_v * sin_a;
-        int8_t c = isInMap((px + dx) >> BitTile, yv >> BitTile);
-        if(c != -1) {
-          texture_v = c;
-          break;
-        }
-        px += dx << BitTile;
-        if(i + 1 == MaxDepth >> BitTile) texture_v = 255;
-        if(Width << BitTile < yv || yv < 0 || px < 0 || px > Height << BitTile) break;
-    }
-    
-    // horizontals        180 mcs
-    byte py;
-    int8_t dy;
-    byte texture_h;
     if(sin_a >= 0) {
       py = ym + Tile;
       dy = 1;
@@ -51,24 +32,42 @@ void RayCast(bool isClearDisplay) {
       py = ym;
       dy = -1;
     }
-    float depth_h;
-    byte xh;
+    float depth_v, depth_h;
+    byte yv, xh;
+
+    bool isV_Collided = false;
+    bool isH_Collided = false;
     for(byte i = 0; i < MaxDepth >> BitTile; i++) {
+      if(!isV_Collided) {
+          depth_v = (px - x) / cos_a;
+          yv = y + depth_v * sin_a;
+          int8_t c = isInMap((px + dx) >> BitTile, yv >> BitTile);
+          if(c != -1) {
+            texture_v = c;
+            isV_Collided = true;
+          }
+          px += dx << BitTile;
+          if(i + 1 == MaxDepth >> BitTile) texture_v = 255;
+          if(depth_v > MaxDepth || Width << BitTile < yv || yv < 0 || px < 0 || px > Height << BitTile) isV_Collided = true;
+      }
+      if(!isH_Collided) {        
         depth_h = (py - y) / sin_a;
         xh = x + depth_h * cos_a;
         int8_t c = isInMap(xh >> BitTile, (py + dy) >> BitTile);
         if(c != -1) {
           texture_h = c;
-          break;
+          isH_Collided = true;
         }
-        py += (dy << BitTile);
+        py += dy << BitTile;
         if(i + 1 == MaxDepth >> BitTile) texture_h = 255;
-        if(depth_h > depth_v || (Height << BitTile) < xh || xh < 0) break;
+        if(depth_h > MaxDepth || (Height << BitTile) < xh || xh < 0 || py > Width << BitTile || py < 0) isH_Collided = true;
+      } else if(isV_Collided) break;
     }
 
     // Projection       ~216 mcs
     float depth;
-    byte texture, wallColor;
+    byte texture;
+    uint8_t wallColor;
     if(depth_v < depth_h) {
       depth = depth_v;
       texture = texture_v;
@@ -79,7 +78,8 @@ void RayCast(bool isClearDisplay) {
     depth *= cos(angle - cur_angle);
     uint16_t proect_height = PrectCoeff / depth;
     if(proect_height > Height) proect_height = Height;
-    wallColor = 255 - byte(depth * 12.75);
+    wallColor = 255 - (depth * (255 / (MaxDepth - (Tile >> 1))));
+    if(wallColor < 0) wallColor = 0;
     
     if(Is3D) {
       // fill the voids
@@ -91,6 +91,7 @@ void RayCast(bool isClearDisplay) {
       }
       if(oldWalls[ray][2] < proect_height || oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) {
         // Render of new walls
+        bool isTexture = false;
         switch (texture) {
           case 0: TFTscreen.fill(wallColor, 0, 0);
             break;
@@ -98,15 +99,19 @@ void RayCast(bool isClearDisplay) {
             break;
           case 2: TFTscreen.fill(0, 0, wallColor);
             break;
-          case 3: isClearDisplay = SetColorInTexture(ray, cos_a, depth);
-            break;
+          // case 3: isTexture = true;
+          //   break;
           default: TFTscreen.fill(0, 0, 0);
             break;
         }
-        if(oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, proect_height);
-        else {
-          TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, (proect_height >> 1) - (oldWalls[ray][2] >> 1));
-          TFTscreen.rect(ray * Scale, (Height >> 1) + (oldWalls[ray][2] >> 1), Scale, (proect_height >> 1) - (oldWalls[ray][2] >> 1));
+        if(isTexture) {
+          // SetColorInTexture(ray, cos_a, sin_a, depth, proect_height, depth_v < depth_h);
+        } else {
+          if(oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, proect_height);
+          else {
+            TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, (proect_height >> 1) - (oldWalls[ray][2] >> 1));
+            TFTscreen.rect(ray * Scale, (Height >> 1) + (oldWalls[ray][2] >> 1), Scale, (proect_height >> 1) - (oldWalls[ray][2] >> 1));
+          }
         }
       }
       // Remember the walls
