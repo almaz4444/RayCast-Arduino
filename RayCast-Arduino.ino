@@ -23,7 +23,7 @@
 #define Fow PI / 3
 #define HalfFow Fow / 2
 #define NumRays 80
-#define MaxDepth Tile * 5
+#define MaxDepth Tile * 10
 #define DeltaAngle Fow / NumRays
 #define Dist NumRays / (2 * tan(HalfFow))
 #define PrectCoeff round(Width / NumRays) * Dist * Tile
@@ -95,7 +95,7 @@ const String StringMap[] {
 //   "B              B",
 //   "B              B",
 //   "B              B",
-//   "B     .        B",
+//   "B     . W      B",
 //   "R              G",
 //   "R              R",
 //   "R              R",
@@ -147,7 +147,6 @@ void loop() {
     // MapUpdate();
     RayCast(false);
     movePlayer();
-    dFpsTime = millis();
 
     // Rendering
     if (!Is3D) DrawMap(false);

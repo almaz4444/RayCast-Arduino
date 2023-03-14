@@ -22,35 +22,39 @@ void MapInit() {
   }
 }
 
-// char* oldTextures = malloc(sizeof(char) * NumRays);
+char* oldTextures = malloc(sizeof(char) * NumRays);
 
-// void SetColorInTexture(byte ray, float cos_a, float sin_a, float depth, byte proect_height, bool V_Min_H) { // (40, 56) | (32, 48)
-//   byte localX = byte((x + depth * cos_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((x + depth * cos_a) / Tile) * Tile;
-//   byte localY = byte((y + depth * sin_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((y + depth * sin_a) / Tile) * Tile;
+void SetColorInTexture(byte ray, float cos_a, float sin_a, float depth, byte proect_height, bool V_Min_H, byte wallColor) { // (40, 56) | (32, 48)
+  byte localX = byte((x + depth * cos_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((x + depth * cos_a) / Tile) * Tile;
+  byte localY = byte((y + depth * sin_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((y + depth * sin_a) / Tile) * Tile;
 
-//   for(byte i = 0; i < TextureTile; i++) {
-//     char cell = (V_Min_H)? WallTexture[i][localY] : WallTexture[i][localX];
+  Serial.print(localX);
+  Serial.print(" ");
+  Serial.println(localY);
+
+  for(byte i = 0; i < TextureTile; i++) {
+    char cell = (V_Min_H)? WallTexture[i][localY] : WallTexture[i][localX];
     
-//     if(oldTextures[ray] != cell) {
-//       if(cell == 'W') TFTscreen.fill(255, 255, 255);
-//       else if (cell == 'B') TFTscreen.fill(255, 0, 0);
-//       else if (cell == 'G') TFTscreen.fill(0, 255, 0);
-//       else if (cell == 'R') TFTscreen.fill(0, 0, 255);
+    if(oldTextures[ray] != cell) {
+      if(cell == 'W') TFTscreen.fill(wallColor, wallColor, wallColor);
+      else if (cell == 'B') TFTscreen.fill(wallColor, 0, 0);
+      else if (cell == 'G') TFTscreen.fill(0, wallColor, 0);
+      else if (cell == 'R') TFTscreen.fill(0, 0, wallColor);
 
-//       byte heightWall = proect_height / TextureTile + 1;
-//       byte yWall = (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile);
-//       if(yWall + heightWall > Height) heightWall -= (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile) + heightWall - Height;
-//       else if(yWall < 0) {
-//         heightWall -= 0 - yWall;
-//         yWall = 0;
-//       }
-//       if(heightWall < 0) break;
+      byte heightWall = proect_height / TextureTile + 1;
+      byte yWall = (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile);
+      if(yWall + heightWall > Height) heightWall -= (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile) + heightWall - Height;
+      else if(yWall < 0) {
+        heightWall -= 0 - yWall;
+        yWall = 0;
+      }
+      if(heightWall < 0) break;
       
-//       TFTscreen.rect(ray * Scale, yWall, Scale, heightWall);
-//       oldTextures[ray] = cell;
-//     }
-//   }
-// }
+      TFTscreen.rect(ray * Scale, yWall, Scale, heightWall);
+      oldTextures[ray] = cell;
+    }
+  }
+}
 
 // float updateTime;
 

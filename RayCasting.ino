@@ -18,20 +18,12 @@ void RayCast(bool isClearDisplay) {
     byte px, py;
     int8_t dx, dy;
     byte texture_v, texture_h;
-    if(cos_a >= 0) {
-      px = xm + Tile;
-      dx = 1;
-    } else {
-      px = xm;
-      dx = -1;
-    }
-    if(sin_a >= 0) {
-      py = ym + Tile;
-      dy = 1;
-    } else {
-      py = ym;
-      dy = -1;
-    }
+    
+    dx = (cos_a >= 0) ? 1 : -1;
+    dy = (sin_a >= 0) ? 1 : -1;
+    px = xm + (dx == 1 ? Tile : 0);
+    py = ym + (dy == 1 ? Tile : 0);
+    
     float depth_v, depth_h;
     byte yv, xh;
 
@@ -67,7 +59,7 @@ void RayCast(bool isClearDisplay) {
     // Projection       ~216 mcs
     float depth;
     byte texture;
-    uint8_t wallColor;
+    byte wallColor;
     if(depth_v < depth_h) {
       depth = depth_v;
       texture = texture_v;
@@ -99,13 +91,13 @@ void RayCast(bool isClearDisplay) {
             break;
           case 2: TFTscreen.fill(0, 0, wallColor);
             break;
-          // case 3: isTexture = true;
-          //   break;
+          case 3: isTexture = true;
+            break;
           default: TFTscreen.fill(0, 0, 0);
             break;
         }
         if(isTexture) {
-          // SetColorInTexture(ray, cos_a, sin_a, depth, proect_height, depth_v < depth_h);
+          SetColorInTexture(ray, cos_a, sin_a, depth, proect_height, depth_v < depth_h, wallColor);
         } else {
           if(oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, proect_height);
           else {
