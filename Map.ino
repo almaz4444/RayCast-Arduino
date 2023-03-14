@@ -22,38 +22,53 @@ void MapInit() {
   }
 }
 
-char* oldTextures = malloc(sizeof(char) * NumRays);
+byte* oldTextures = malloc(sizeof(byte) * NumRays);
+byte startWallRay;
 
-void SetColorInTexture(byte ray, float cos_a, float sin_a, float depth, byte proect_height, bool V_Min_H, byte wallColor) { // (40, 56) | (32, 48)
-  byte localX = byte((x + depth * cos_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((x + depth * cos_a) / Tile) * Tile;
-  byte localY = byte((y + depth * sin_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((y + depth * sin_a) / Tile) * Tile;
+void SetColorInTexture(byte ray, byte proect_height, byte texture, byte wallColor, bool isNewWall) { // (40, 56) | (32, 48)
+  // byte localX = byte((x + depth * cos_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((x + depth * cos_a) / Tile) * Tile;
+  // byte localY = byte((y + depth * sin_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((y + depth * sin_a) / Tile) * Tile;
 
-  Serial.print(localX);
-  Serial.print(" ");
-  Serial.println(localY);
-
-  for(byte i = 0; i < TextureTile; i++) {
-    char cell = (V_Min_H)? WallTexture[i][localY] : WallTexture[i][localX];
+  // Serial.print(localX);
+  // Serial.print(" ");
+  // Serial.println(localY);
+  
+  // for(byte i = 0; i < TextureTile; i++) {
+  //   char cell = (V_Min_H)? WallTexture[i][localY] : WallTexture[i][localX];
     
-    if(oldTextures[ray] != cell) {
-      if(cell == 'W') TFTscreen.fill(wallColor, wallColor, wallColor);
-      else if (cell == 'B') TFTscreen.fill(wallColor, 0, 0);
-      else if (cell == 'G') TFTscreen.fill(0, wallColor, 0);
-      else if (cell == 'R') TFTscreen.fill(0, 0, wallColor);
+  //   if(oldTextures[ray] != cell) {
+  //     if(cell == 'W') TFTscreen.fill(wallColor, wallColor, wallColor);
+  //     else if (cell == 'B') TFTscreen.fill(wallColor, 0, 0);
+  //     else if (cell == 'G') TFTscreen.fill(0, wallColor, 0);
+  //     else if (cell == 'R') TFTscreen.fill(0, 0, wallColor);
 
-      byte heightWall = proect_height / TextureTile + 1;
-      byte yWall = (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile);
-      if(yWall + heightWall > Height) heightWall -= (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile) + heightWall - Height;
-      else if(yWall < 0) {
-        heightWall -= 0 - yWall;
-        yWall = 0;
-      }
-      if(heightWall < 0) break;
+  //     byte heightWall = proect_height / TextureTile + 1;
+  //     byte yWall = (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile);
+  //     if(yWall + heightWall > Height) heightWall -= (Height >> 1) - (proect_height >> 1) + i * (proect_height / TextureTile) + heightWall - Height;
+  //     else if(yWall < 0) {
+  //       heightWall -= 0 - yWall;
+  //       yWall = 0;
+  //     }
+  //     if(heightWall < 0) break;
       
-      TFTscreen.rect(ray * Scale, yWall, Scale, heightWall);
-      oldTextures[ray] = cell;
-    }
+  //     TFTscreen.rect(ray * Scale, yWall, Scale, heightWall);
+  //     oldTextures[ray] = cell;
+  //   }
+  // }
+
+  if(isNewWall) startWallRay = ray;
+
+  // if(oldTextures[ray] != texture) {
+  for (byte yc = 0; yc < 16; yc++) {
+    TFTscreen.drawRect(ray * Scale,
+                       (Height >> 1) - (proect_height >> 1) + yc * (proect_height / 16.0),
+                       Scale, proect_height / 16,
+                       TFTscreen.Color565(Smile[yc + 16 * (ray - startWallRay)][0], Smile[yc + 16 * (ray - startWallRay)][1], Smile[yc + 16 * (ray - startWallRay)][2])
+                      );
   }
+  //   oldTextures[ray] = texture;
+  // }
+  //   TFTscreen.drawBitmap(ray * Scale, (Height >> 1) - (proect_height >> 1), Smile, 16, 16, TFTscreen.Color565(0, wallColor, 0));
 }
 
 // float updateTime;

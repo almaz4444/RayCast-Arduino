@@ -74,7 +74,7 @@ const String StringMap[] {
   "B BR        R  B",
   "B G  G   GGGR  B",
   "B    R   R   G B",
-  "R R  RBBBB R.  G",
+  "R R  RBBBB R.  W",
   "R  BB       R  R",
   "R     GG RRRR GR",
   "R GRRR   B  R  R",
@@ -134,6 +134,7 @@ void setup() {
   TFTscreen.begin();
 
   MapInit();
+  InitBitmap();
 
   DrawBG();
 }
