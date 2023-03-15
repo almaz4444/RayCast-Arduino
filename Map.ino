@@ -25,7 +25,7 @@ void MapInit() {
 byte* oldTextures = malloc(sizeof(byte) * NumRays);
 byte startWallRay;
 
-void SetColorInTexture(byte ray, byte proect_height, byte texture, byte wallColor, bool isNewWall) { // (40, 56) | (32, 48)
+void SetColorInTexture(float depth, float cos_a, float sin_a, byte ray, byte proect_height, byte texture, byte wallColor, bool isNewWall) { // (40, 56) | (32, 48)
   // byte localX = byte((x + depth * cos_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((x + depth * cos_a) / Tile) * Tile;
   // byte localY = byte((y + depth * sin_a) / (Tile / TextureTile)) * (Tile / TextureTile) - byte((y + depth * sin_a) / Tile) * Tile;
 
@@ -57,15 +57,28 @@ void SetColorInTexture(byte ray, byte proect_height, byte texture, byte wallColo
   // }
 
   if(isNewWall) startWallRay = ray;
+  
+  byte blockX = abs(x - byte((x + depth * cos_a) / Tile) * Tile);
+  byte blockY = abs(y - byte((y + depth * sin_a) / Tile) * Tile);
+  float angleInDisplay = acos((depth * cos(angle) - Tile / 2) / (depth * sin(angle)));
+  byte rayStopBrick = round((angleInDisplay + HalfFow - angle) / (Fow / NumRays)) + 1;
+  byte widthBrick = (rayStopBrick - startWallRay);
 
   // if(oldTextures[ray] != texture) {
   for (byte yc = 0; yc < 16; yc++) {
     TFTscreen.drawRect(ray * Scale,
                        (Height >> 1) - (proect_height >> 1) + yc * (proect_height / 16.0),
-                       Scale, proect_height / 16,
-                       TFTscreen.Color565(Smile[yc + 16 * (ray - startWallRay)][0], Smile[yc + 16 * (ray - startWallRay)][1], Smile[yc + 16 * (ray - startWallRay)][2])
+                       Scale * 2,
+                       proect_height / 16,
+                       TFTscreen.Color565(Smile[16 * yc + (ray - startWallRay)][0], Smile[16 * yc + (ray - startWallRay)][1], Smile[16 * yc + (ray - startWallRay)][2])
                       );
   }
+  Serial.println(startWallRay);
+  // Serial.print(" ");
+  // Serial.print(rayStopBrick);
+  // Serial.print(" ");
+  // Serial.println(widthBrick);
+  // TFTscreen.drawCircle(rayStopBrick * Scale, Height / 2, 2, TFTscreen.Color565(0, 0, 0));
   //   oldTextures[ray] = texture;
   // }
   //   TFTscreen.drawBitmap(ray * Scale, (Height >> 1) - (proect_height >> 1), Smile, 16, 16, TFTscreen.Color565(0, wallColor, 0));

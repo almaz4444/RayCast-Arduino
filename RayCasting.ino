@@ -1,5 +1,5 @@
 int oldWalls[NumRays][5];
-byte oldBlock[2];
+float oldBlockRay;
 
 void RayCast(bool isClearDisplay) {
   // Init
@@ -98,10 +98,11 @@ void RayCast(bool isClearDisplay) {
             break;
         }
         if(isTexture) {
-          byte currentBlock[2] { byte(byte(x + depth * cos_a) >> BitTile) << BitTile, byte(byte(y + depth * sin_a) >> BitTile) << BitTile };
-          SetColorInTexture(ray, proect_height, texture, wallColor, (oldBlock[0] != currentBlock[0] && oldBlock[1] != currentBlock[1]));
-          oldBlock[0] = currentBlock[0];
-          oldBlock[1] = currentBlock[1];
+          float currentBlockRay = (depth * cos(angle) - Tile / 2) / (depth * sin(angle));
+          if(currentBlockRay != oldBlockRay) {
+            SetColorInTexture(depth, cos_a, sin_a, ray, proect_height, texture, wallColor, oldBlockRay != currentBlockRay);
+            oldBlockRay = currentBlockRay;
+          }
         } else {
           if(oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, proect_height);
           else {

@@ -1,5 +1,6 @@
 #include <TFT.h>
 #include <SPI.h>
+#include <Wire.h>
 #include "Textures.h"
 
 
@@ -23,10 +24,10 @@
 #define Fow PI / 3
 #define HalfFow Fow / 2
 #define NumRays 80
-#define MaxDepth Tile * 10
+#define MaxDepth Tile * 5
 #define DeltaAngle Fow / NumRays
 #define Dist NumRays / (2 * tan(HalfFow))
-#define PrectCoeff round(Width / NumRays) * Dist * Tile
+#define PrectCoeff round(Width / NumRays) * Dist * 5
 #define Scale round(Width / NumRays)
 
 // Player
