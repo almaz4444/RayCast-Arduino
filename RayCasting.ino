@@ -1,7 +1,8 @@
-int oldWalls[NumRays][5];
 float oldBlockRay;
+int oldWalls[NumRays][5];
 
 void RayCast(bool isClearDisplay) {
+  int castedWalls[NumRays][3];
   // Init
   byte xm = byte(byte(x) >> BitTile) << BitTile;
   byte ym = byte(byte(y) >> BitTile) << BitTile;
@@ -56,7 +57,6 @@ void RayCast(bool isClearDisplay) {
         if(depth_h > MaxDepth || (Height << BitTile) < xh || xh < 0 || py > Width << BitTile || py < 0) isH_Collided = true;
       } else if(isV_Collided) break;
     }
-
     // Projection       ~216 mcs
     float depth;
     byte texture;
@@ -74,7 +74,19 @@ void RayCast(bool isClearDisplay) {
     wallColor = 255 - (depth * (255 / (MaxDepth - (Tile >> 1))));
     if(wallColor < 0) wallColor = 0;
     
-    if(Is3D) {
+    castedWalls[ray][0] = proect_height;
+    castedWalls[ray][1] = texture;
+    castedWalls[ray][2] = wallColor;
+    
+    cur_angle += DeltaAngle;
+  }
+    
+  if(Is3D) {
+    for (byte ray = 0; ray < NumRays; ray++) {
+      uint16_t proect_height = castedWalls[ray][0];
+      byte texture = castedWalls[ray][1];
+      byte wallColor = castedWalls[ray][2];
+
       // fill the voids
       if(oldWalls[ray][2] > proect_height) {
         TFTscreen.fill(SkyColor3D[0], SkyColor3D[1], SkyColor3D[2]);
@@ -98,11 +110,11 @@ void RayCast(bool isClearDisplay) {
             break;
         }
         if(isTexture) {
-          float currentBlockRay = (depth * cos(angle) - Tile / 2) / (depth * sin(angle));
-          if(currentBlockRay != oldBlockRay) {
-            SetColorInTexture(depth, cos_a, sin_a, ray, proect_height, texture, wallColor, oldBlockRay != currentBlockRay);
-            oldBlockRay = currentBlockRay;
-          }
+          // float currentBlockRay = (depth * cos(angle) - Tile / 2) / (depth * sin(angle));
+          // if(currentBlockRay != oldBlockRay) {
+            SetColorInTexture(proect_height, texture, wallColor, castedWalls[ray], ray);
+            // oldBlockRay = currentBlockRay;
+          // }
         } else {
           if(oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, proect_height);
           else {
@@ -118,8 +130,6 @@ void RayCast(bool isClearDisplay) {
       oldWalls[ray][3] = texture;
       oldWalls[ray][4] = wallColor;
     }
-    
-    cur_angle += DeltaAngle;
   }
 }
 

@@ -1,6 +1,5 @@
 #include <TFT.h>
 #include <SPI.h>
-#include <Wire.h>
 #include "Textures.h"
 
 
@@ -11,14 +10,14 @@
 #define MapRows 20
 #define MapColumns 16
 #define Tile 4
-#define BitTile 2       // 2 ^ BitTile = Tile
+#define BitTile 2  // 2 ^ BitTile = Tile
 #define TileInMiniMap round(Width / MapRows)
-#define BitTileInMiniMap 3    // 2 ^ BitTileInMiniMap = TileInMiniMap
+#define BitTileInMiniMap 3  // 2 ^ BitTileInMiniMap = TileInMiniMap
 
 // Display
-#define cs 10
-#define dc 9
-#define rst 8
+#define cs 2
+#define dc 4
+#define rst 3
 
 // Ray casting
 #define Fow PI / 3
@@ -44,13 +43,13 @@
 #define FPS_TextSize 1
 
 // Colors
-const byte MiniMapColor[3]        { 0, 0, 255 };
-const byte PlayerColor[3]         { 0, 255, 0 };
-const byte PlayerLookLineColor[3] { 50, 50, 150 };
-const byte FPSColor[3]            { 255, 255, 255 };
-const byte BGColor2D[3]           { 0, 0, 0 };
-const byte SkyColor3D[3]          { 235, 206, 135 };
-const byte FlorColor3D[3]         { 50, 50, 50 };
+const byte MiniMapColor[3]{ 0, 0, 255 };
+const byte PlayerColor[3]{ 0, 255, 0 };
+const byte PlayerLookLineColor[3]{ 50, 50, 150 };
+const byte FPSColor[3]{ 255, 255, 255 };
+const byte BGColor2D[3]{ 0, 0, 0 };
+const byte SkyColor3D[3]{ 235, 206, 135 };
+const byte FlorColor3D[3]{ 50, 50, 50 };
 
 // Map
 class Brick {
@@ -64,7 +63,7 @@ public:
   byte x, y, color;
 };
 
-const String StringMap[] {
+const String StringMap[]{
   "BBBBBBBBBBBBBBBB",
   "B  RRRR  R  R  B",
   "B R    G R RRR B",
@@ -112,7 +111,7 @@ const String StringMap[] {
 Brick* Map = malloc(MapRows * MapColumns * sizeof(Brick));
 
 // ________Init________
-const TFT TFTscreen = TFT(cs, dc, rst);
+const TFT TFTscreen = TFT::TFT(cs, dc, rst);
 
 float x, y, z;
 float angle = 1.5708;
@@ -141,7 +140,7 @@ void setup() {
 }
 
 void loop() {
-  for(;;) {
+  for (;;) {
     // FPS writing
     fps_count++;
 
@@ -163,7 +162,9 @@ void loop() {
         isButtonPinClicked = false;
         DrawBG();
         if (!Is3D) DrawMap(true);
-        else RayCast(true);
+        else {
+          RayCast(true);
+        }
         DrawFPS(true);
       } else isButtonPinClicked = true;
     }
