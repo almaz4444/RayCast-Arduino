@@ -1,145 +1,157 @@
-float oldBlockRay;
-int oldWalls[NumRays][5];
+struct {
+  byte proect_height;
+  col_vec3 texture;
+} oldWalls[NumRays];
+struct {
+  float depth = 0;
+  col_vec3 texture;
+  bool isCollided = false;
+} castInfo;
+struct {
+  byte proect_height;
+  col_vec3 texture;
+} castedWalls[NumRays];
 
-void RayCast(bool isClearDisplay) {
-  int castedWalls[NumRays][3];
-  // Init
-  byte xm = byte(byte(x) >> BitTile) << BitTile;
-  byte ym = byte(byte(y) >> BitTile) << BitTile;
-  float cur_angle = angle - HalfFow;
-  
-  // For through the rays
-  for(byte ray = 0; ray < NumRays; ray++) {
-    // Ray cast       570 mcs
-    float sin_a = sin(cur_angle);
-    float cos_a = cos(cur_angle);
-    if(sin_a == 0) sin_a = 0.000001;
-    if(cos_a == 0) cos_a = 0.000001;
+void RayCast(const float sin_a, const float cos_a, const float x, const float y, col_vec3 color, const byte maxDepthTile) {
+  // verticals & horizontals glass
+  int8_t dx = (cos_a >= 0) ? 1 : -1;
+  int8_t dy = (sin_a >= 0) ? 1 : -1;
+  int8_t dxTile = dx << BitTile;
+  int8_t dyTile = dy << BitTile;
+  byte px = ((byte(x) >> BitTile) << BitTile) + ((dx == 1) ? Tile : 0);
+  byte py = ((byte(y) >> BitTile) << BitTile) + ((dy == 1) ? Tile : 0);
 
-    // verticals & horizontals       160 mcs
-    byte px, py;
-    int8_t dx, dy;
-    byte texture_v, texture_h;
-    
-    dx = (cos_a >= 0) ? 1 : -1;
-    dy = (sin_a >= 0) ? 1 : -1;
-    px = xm + (dx == 1 ? Tile : 0);
-    py = ym + (dy == 1 ? Tile : 0);
-    
-    float depth_v, depth_h;
-    byte yv, xh;
+  float depth_v, depth_h;
+  float depthGlass_h = 0;
+  float depthGlass_v = 0;
+  float yv, xh;
+  col_vec3 texture_v;
+  col_vec3 texture_h;
 
-    bool isV_Collided = false;
-    bool isH_Collided = false;
-    for(byte i = 0; i < MaxDepth >> BitTile; i++) {
-      if(!isV_Collided) {
-          depth_v = (px - x) / cos_a;
-          yv = y + depth_v * sin_a;
-          int8_t c = isInMap((px + dx) >> BitTile, yv >> BitTile);
-          if(c != -1) {
-            texture_v = c;
+  boolean isV_Collided = false;
+  boolean isH_Collided = false;
+  for (byte i = 0; i < maxDepthTile; i++) {
+    if (!isV_Collided) {
+      depth_v = (px - x) / cos_a;
+      yv = y + depth_v * sin_a;
+      Wall wallV = getWall((px + dx) >> BitTile, byte(yv) >> BitTile);
+      if (wallV.isWall) {
+        if (wallV.reflectivity) {
+          RayCast(-sin_a, cos_a, px, yv, clamp(color - wallV.color / 255 * col_vec3(wallV.transparency), 0, 255), maxDepthTile - (i + 1));
+          depthGlass_v = castInfo.depth;
+          texture_v = castInfo.texture;
+          isV_Collided = castInfo.isCollided;
+        }
+        if (!isV_Collided) {
+          if (wallV.transparency) {
+            texture_v = texture_v - wallV.color / 255 * wallV.transparency;
+          } else {
+            texture_v = wallV.color;
             isV_Collided = true;
           }
-          px += dx << BitTile;
-          if(i + 1 == MaxDepth >> BitTile) texture_v = 255;
-          if(depth_v > MaxDepth || Width << BitTile < yv || yv < 0 || px < 0 || px > Height << BitTile) isV_Collided = true;
-      }
-      if(!isH_Collided) {        
-        depth_h = (py - y) / sin_a;
-        xh = x + depth_h * cos_a;
-        int8_t c = isInMap(xh >> BitTile, (py + dy) >> BitTile);
-        if(c != -1) {
-          texture_h = c;
-          isH_Collided = true;
         }
-        py += dy << BitTile;
-        if(i + 1 == MaxDepth >> BitTile) texture_h = 255;
-        if(depth_h > MaxDepth || (Height << BitTile) < xh || xh < 0 || py > Width << BitTile || py < 0) isH_Collided = true;
-      } else if(isV_Collided) break;
-    }
-    // Projection       ~216 mcs
-    float depth;
-    byte texture;
-    byte wallColor;
-    if(depth_v < depth_h) {
-      depth = depth_v;
-      texture = texture_v;
-    } else {
-      depth = depth_h;
-      texture = texture_h;
-    }
-    depth *= cos(angle - cur_angle);
-    uint16_t proect_height = PrectCoeff / depth;
-    if(proect_height > Height) proect_height = Height;
-    wallColor = 255 - (depth * (255 / (MaxDepth - (Tile >> 1))));
-    if(wallColor < 0) wallColor = 0;
-    
-    castedWalls[ray][0] = proect_height;
-    castedWalls[ray][1] = texture;
-    castedWalls[ray][2] = wallColor;
-    
-    cur_angle += DeltaAngle;
-  }
-    
-  if(Is3D) {
-    for (byte ray = 0; ray < NumRays; ray++) {
-      uint16_t proect_height = castedWalls[ray][0];
-      byte texture = castedWalls[ray][1];
-      byte wallColor = castedWalls[ray][2];
-
-      // fill the voids
-      if(oldWalls[ray][2] > proect_height) {
-        TFTscreen.fill(SkyColor3D[0], SkyColor3D[1], SkyColor3D[2]);
-        TFTscreen.rect(oldWalls[ray][0], oldWalls[ray][1], Scale, (oldWalls[ray][2] >> 1) - (proect_height >> 1));
-        TFTscreen.fill(FlorColor3D[0], FlorColor3D[1], FlorColor3D[2]);
-        TFTscreen.rect(oldWalls[ray][0], oldWalls[ray][1] + (oldWalls[ray][2] >> 1) + (proect_height >> 1), Scale, (oldWalls[ray][2] >> 1) - (proect_height >> 1) + 1);
       }
-      if(oldWalls[ray][2] < proect_height || oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) {
-        // Render of new walls
-        bool isTexture = false;
-        switch (texture) {
-          case 0: TFTscreen.fill(wallColor, 0, 0);
-            break;
-          case 1: TFTscreen.fill(0, wallColor, 0);
-            break;
-          case 2: TFTscreen.fill(0, 0, wallColor);
-            break;
-          case 3: isTexture = true;
-            break;
-          default: TFTscreen.fill(0, 0, 0);
-            break;
+      if (depth_v > MaxDepth || MapColumnsTile < yv || yv < 0 || px < 0 || px > MapRowsTile) isV_Collided = true;
+      px += dxTile;
+    }
+    if (!isH_Collided) {
+      depth_h = (py - y) / sin_a;
+      xh = x + depth_h * cos_a;
+      Wall wallH = getWall(byte(xh) >> BitTile, (py + dy) >> BitTile);
+      if (wallH.isWall) {
+        if (wallH.reflectivity) {
+          RayCast(-sin_a, cos_a, xh, py, clamp(color - wallH.color / 255 * col_vec3(wallH.transparency), 0, 255), maxDepthTile - (i + 1));
+          depthGlass_h = castInfo.depth;
+          texture_h = castInfo.texture;
+          isH_Collided = castInfo.isCollided;
         }
-        if(isTexture) {
-          // float currentBlockRay = (depth * cos(angle) - Tile / 2) / (depth * sin(angle));
-          // if(currentBlockRay != oldBlockRay) {
-            SetColorInTexture(proect_height, texture, wallColor, castedWalls[ray], ray);
-            // oldBlockRay = currentBlockRay;
-          // }
-        } else {
-          if(oldWalls[ray][3] != texture || oldWalls[ray][4] != wallColor || isClearDisplay) TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, proect_height);
-          else {
-            TFTscreen.rect(ray * Scale, (Height >> 1) - (proect_height >> 1), Scale, (proect_height >> 1) - (oldWalls[ray][2] >> 1));
-            TFTscreen.rect(ray * Scale, (Height >> 1) + (oldWalls[ray][2] >> 1), Scale, (proect_height >> 1) - (oldWalls[ray][2] >> 1));
+        if (!isH_Collided) {
+          if (wallH.transparency) {
+            texture_h = texture_h - wallH.color / 255 * wallH.transparency;
+          } else {
+            texture_h = wallH.color;
+            isH_Collided = true;
           }
         }
       }
-      // Remember the walls
-      oldWalls[ray][0] = ray * Scale;
-      oldWalls[ray][1] = round(Height >> 1) - round(proect_height >> 1);
-      oldWalls[ray][2] = proect_height;
-      oldWalls[ray][3] = texture;
-      oldWalls[ray][4] = wallColor;
+      if (depth_h > MaxDepth || MapRowsTile < xh || xh < 0 || py > MapColumnsTile || py < 0) isH_Collided = true;
+      py += dyTile;
     }
+    if ((isV_Collided && (depth_v < depth_h)) || (isV_Collided && isH_Collided)) break;
+  }
+  if (depth_v < depth_h) {
+    castInfo.depth = depth_v + depthGlass_v;
+    castInfo.texture = texture_v;
+    castInfo.isCollided = isV_Collided;
+  } else {
+    castInfo.depth = depth_h + depthGlass_h;
+    castInfo.texture = texture_h;
+    castInfo.isCollided = isH_Collided;
   }
 }
 
-int8_t isInMap(byte px_x, byte px_y) {
-  char cell = StringMap[px_x][px_y];
-  if(cell != ' ') {
-    if(cell == 'B') return 0;
-    else if(cell == 'G') return 1;
-    else if(cell == 'R') return 2;
-    else if(cell == 'W') return 3;
+void RaysCasting(const boolean isClearDisplay) {
+  // Init
+  const byte xm = (byte(x) >> BitTile) << BitTile;
+  const byte ym = (byte(y) >> BitTile) << BitTile;
+  float cur_angle = angle - HalfFow;
+
+  // For through the rays
+  for (byte ray = 0; ray < NumRays; ray++) {
+    // Ray cast
+    float sin_a = sin(cur_angle);
+    float cos_a = cos(cur_angle);
+    if (sin_a == 0) sin_a = 0.000001;
+    if (cos_a == 0) cos_a = 0.000001;
+    col_vec3 rayColor = col_vec3(255, 255, 255);
+
+    // verticals & horizontals
+    RayCast(sin_a, cos_a, x, y, rayColor, MaxDepthTile);
+    const float fishEyeFix = cos(angle - cur_angle);
+    const float depth = castInfo.depth * fishEyeFix;
+
+    // Storing the values in the castedWalls array
+    castedWalls[ray].proect_height = (PrectCoeff / depth) > Height ? Height : (PrectCoeff / depth);
+    castedWalls[ray].texture = castInfo.texture;
+
+    // Updating the angle
+    cur_angle += DeltaAngle;
   }
-  return -1;
+
+  for (byte ray = 0; ray < NumRays; ray++) {
+    const byte proect_height = castedWalls[ray].proect_height;
+    const col_vec3 texture = castedWalls[ray].texture;
+    const byte oldWallProjectHeightField = (oldWalls[ray].proect_height >> 1);
+    const byte proectHeightField = (proect_height >> 1);
+    const byte brickY = HeightField - proectHeightField;
+    const byte differenceWallsHeight = oldWallProjectHeightField - proectHeightField;
+    const bool isWallChanged = oldWalls[ray].texture != texture || isClearDisplay;
+    const byte brickX = ray * Scale;
+
+    // fill the voids
+    if (oldWalls[ray].proect_height > proect_height) {
+      const byte oldBrickY = HeightField - oldWallProjectHeightField;
+      for (byte i = 0; i < Scale; i++) {
+        tft.drawFastVLine(brickX + i, oldBrickY, differenceWallsHeight, SkyColor);
+        tft.drawFastVLine(brickX + i, oldBrickY + oldWallProjectHeightField + proectHeightField, differenceWallsHeight + 1, FlorColor);
+      }
+    }
+    if (isWallChanged || oldWalls[ray].proect_height < proect_height) {
+      // Render of new walls
+      const unsigned int color = tft.color565(texture.r, texture.g, texture.b);
+      const byte oldBrickY = proectHeightField - oldWallProjectHeightField;
+
+      if (isWallChanged) {
+        for (byte i = 0; i < Scale; i++) tft.drawFastVLine(brickX + i, brickY, proect_height, color);
+      } else {
+        for (byte i = 0; i < Scale; i++) {
+          tft.drawFastVLine(brickX + i, brickY, oldBrickY, color);
+          tft.drawFastVLine(brickX + i, HeightField + oldWallProjectHeightField, oldBrickY, color);
+        }
+      }
+    }
+    // Remember the walls
+    oldWalls[ray].proect_height = proect_height;
+    oldWalls[ray].texture = texture;
+  }
 }

@@ -1,26 +1,32 @@
+#define deathZoneX 6
+#define deathZoneY 4
+
 void movePlayer() {
   // Reading joysticks
-  int paddleX = (analogRead(JoyY_Pin) - 532) >> 5;
-  int8_t paddleY = (analogRead(JoyX_Pin) - 520) * 0.002;
+  const int8_t paddleX = ((1.0 / startJoyX) * analogRead(JoyX_Pin) - 1) * 10;
+  const int8_t paddleY = (paddleY > 0)? -((1.0 / startJoyY) * analogRead(JoyY_Pin) - 1) * 10 : ((1.0 / startJoyY) * analogRead(JoyY_Pin) - 1) * 10;
 
-  if(paddleY > 0) paddleX = -paddleX;
-
-  // Moving       430, 368
-  byte dTimeMovement = millis() - dFpsTime;
-    
-  float step = moveSpeed * dTimeMovement;
-  int8_t cos_step = step * cos(angle);
-  int8_t sin_step = step * sin(angle);
-  x -= paddleY * cos_step * 0.01;
-  y -= paddleY * sin_step * 0.01;
-  angle -= paddleX * rotateSpeed / 10.0 * dTimeMovement;
-
-  collision(paddleY * cos_step, paddleY * sin_step);
+  // Moving
+  const byte millisec = millis();
+  const byte dTimeMovement = millisec - dFpsTime;
+  dFpsTime = millisec;
+  
+  if(abs(paddleX) > deathZoneX) {
+    const float  step     = moveSpeed * dTimeMovement;
+    const float  xMove    = paddleX * step * cos(angle) * 0.01;
+    const float  yMove    = paddleX * step * sin(angle) * 0.01;
+    x -= xMove;
+    y -= yMove;
+    collision(xMove, yMove);
+  }
+  if(abs(paddleY) > deathZoneY) {
+    angle -= paddleY * rotateSpeed * dTimeMovement;
+  }
 }
 
-void collision(int8_t cos_step, int8_t sin_step) {
-  if(isInMap(byte(x - playerSize) >> BitTile, byte(y) >> BitTile) != -1 && cos_step > 0) x += cos_step * 0.01;
-  else if(isInMap(byte(x + playerSize) >> BitTile, byte(y) >> BitTile) != -1 && cos_step < 0) x += cos_step * 0.01;
-  if(isInMap(byte(x) >> BitTile, byte(y - playerSize) >> BitTile) != -1 && sin_step > 0) y += sin_step * 0.01;
-  else if(isInMap(byte(x) >> BitTile, byte(y + playerSize) >> BitTile) != -1 && sin_step < 0) y += sin_step * 0.01;
+void collision(const float xMove, const float yMove) {
+  if((getWall(byte(x - playerSize) >> BitTile, byte(y) >> BitTile).isWall && xMove > 0) ||
+     (getWall(byte(x + playerSize) >> BitTile, byte(y) >> BitTile).isWall && xMove < 0)) x += xMove;
+  if((getWall(byte(x) >> BitTile, byte(y - playerSize) >> BitTile).isWall && yMove > 0) ||
+     (getWall(byte(x) >> BitTile, byte(y + playerSize) >> BitTile).isWall && yMove < 0)) y += yMove;
 }

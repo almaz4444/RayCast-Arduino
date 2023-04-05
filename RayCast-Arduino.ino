@@ -1,69 +1,60 @@
-#include <TFT.h>
+#include <Adafruit_ST7735.h>
+#include <Adafruit_GFX.h>
 #include <SPI.h>
-#include "Textures.h"
+#include <SD.h>
+
+#include "vector.h"
+#include "walls.h"
 
 
 // ________Settings________
-// General
-#define Width 160
-#define Height 128
-#define MapRows 20
-#define MapColumns 16
-#define Tile 4
-#define BitTile 2  // 2 ^ BitTile = Tile
-#define TileInMiniMap round(Width / MapRows)
-#define BitTileInMiniMap 3  // 2 ^ BitTileInMiniMap = TileInMiniMap
-
-// Display
-#define cs 2
-#define dc 4
-#define rst 3
-
-// Ray casting
-#define Fow PI / 3
-#define HalfFow Fow / 2
-#define NumRays 80
-#define MaxDepth Tile * 5
-#define DeltaAngle Fow / NumRays
-#define Dist NumRays / (2 * tan(HalfFow))
-#define PrectCoeff round(Width / NumRays) * Dist * 5
-#define Scale round(Width / NumRays)
-
-// Player
-#define playerSize 1
-#define moveSpeed 0.3
-#define rotateSpeed 1 / 2500.0
+#define TFT_CS 10
+#define TFT_RST 9
+#define TFT_DC 8
 
 // Control
-#define JoyX_Pin A1
-#define JoyY_Pin A0
-#define buttonPin 22
+#define JoyX_Pin       A1
+#define JoyY_Pin       A0
+#define buttonPin      22
+
+// General
+#define Width          160
+#define Height         128
+#define HeightField    (Height >> 1)
+#define MapRows        20
+#define MapColumns     16
+#define Tile           4
+#define BitTile        2  // 2 ^ BitTile = Tile
+#define TileField      (Tile >> 1)
+#define MapRowsTile    (MapRows << BitTile)
+#define MapColumnsTile (MapColumns << BitTile)
+
+// Ray casting
+#define Fow          PI / 3
+#define HalfFow      Fow / 2
+#define NumRays      80
+#define MaxDepth     20
+#define MaxDepthTile MaxDepth >> BitTile
+#define DeltaAngle   Fow / NumRays
+#define Dist         NumRays / (2 * tan(HalfFow))
+#define PrectCoeff   round(Width / NumRays) * Dist * 5
+#define Scale        round(Width / NumRays)
+#define ColorCoeff   255.0 / (MaxDepth - TileField)
+
+// Player
+const byte playerSize   = 1;
+const float moveSpeed   = 0.1;
+const float rotateSpeed = 0.0001;
 
 // Font
-#define FPS_TextSize 1
+const byte FPS_TextSize = 1;
 
 // Colors
-const byte MiniMapColor[3]{ 0, 0, 255 };
-const byte PlayerColor[3]{ 0, 255, 0 };
-const byte PlayerLookLineColor[3]{ 50, 50, 150 };
-const byte FPSColor[3]{ 255, 255, 255 };
-const byte BGColor2D[3]{ 0, 0, 0 };
-const byte SkyColor3D[3]{ 235, 206, 135 };
-const byte FlorColor3D[3]{ 50, 50, 50 };
+#define FPSColor  tft.color565(255, 255, 255)
+#define SkyColor  tft.color565(135, 206, 235)
+#define FlorColor tft.color565( 50,  50,  50)
 
-// Map
-class Brick {
-public:
-  Brick() {}
-  Brick(byte nX, byte nY, byte nColor) {
-    x = nX;
-    y = nY;
-    color = nColor;
-  }
-  byte x, y, color;
-};
-
-const String StringMap[]{
+const PROGMEM char* StringMap[] {
   "BBBBBBBBBBBBBBBB",
   "B  RRRR  R  R  B",
   "B R    G R RRR B",
@@ -72,9 +63,9 @@ const String StringMap[]{
   "B BBBB     RRRRB",
   "B B  RRR BB R RB",
   "B BR        R  B",
-  "B G  G   GGGR  B",
-  "B    R   R   G B",
-  "R R  RBBBB R.  W",
+  "B G  G   GGGO  B",
+  "B    R   R   G O",
+  "R R  RBBBB R.  B",
   "R  BB       R  R",
   "R     GG RRRR GR",
   "R GRRR   B  R  R",
@@ -85,95 +76,56 @@ const String StringMap[]{
   "R         RR G R",
   "RRRRRRRRRRRRRRRR",
 };
-// const String StringMap[] {
-//   "BBBBBBBBBBBBBBBB",
-//   "B              B",
-//   "B              B",
-//   "B              B",
-//   "B              B",
-//   "B              B",
-//   "B              B",
-//   "B              B",
-//   "B              B",
-//   "B     . W      B",
-//   "R              G",
-//   "R              R",
-//   "R              R",
-//   "R              R",
-//   "R              R",
-//   "R              R",
-//   "R              R",
-//   "R              R",
-//   "R              R",
-//   "RRRRRRRRRRRRRRRR",
-// };
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
-Brick* Map = malloc(MapRows * MapColumns * sizeof(Brick));
+Wall Map[MapRows * MapColumns];
 
 // ________Init________
-const TFT TFTscreen = TFT::TFT(cs, dc, rst);
-
-float x, y, z;
+float x, y;
 float angle = 1.5708;
-
-bool Is3D = true;
-bool isButtonPinClicked;
 
 byte wallsCount = 0;
 
 byte fps, fps_count;
 float tick, dFpsTime;
 
+int startJoyX, startJoyY;
+
 void setup() {
   // Init
-  Serial.begin(115200);
-  Serial.println();
-
-  pinMode(buttonPin, INPUT_PULLUP);
-
-  TFTscreen.begin();
-
   MapInit();
-  InitBitmap();
 
   DrawBG();
+  RaysCasting(true);
 }
 
 void loop() {
-  for (;;) {
-    // FPS writing
-    fps_count++;
+  Serial.begin(115200);
+  tft.initR(INITR_BLACKTAB);
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setRotation(90);
 
-    // loop
-    // MapUpdate();
-    RayCast(false);
-    movePlayer();
+  pinMode(buttonPin, INPUT_PULLUP);
+  startJoyY = analogRead(JoyY_Pin);
+  startJoyX = analogRead(JoyX_Pin);
+  fps_count++;
 
-    // Rendering
-    if (!Is3D) DrawMap(false);
-    DrawFPS(Is3D);
+  // loop
+  movePlayer();
+  RaysCasting(false);
+  // Rendering
+  DrawFPS();
 
-    // If the buttonPin on the joystick is pressed, change the mode or option render
-    boolean buttonState = PINA & 0b00000001;
-    if (buttonState) isButtonPinClicked = false;
-    else {
-      if (isButtonPinClicked) {
-        Is3D = !Is3D;
-        isButtonPinClicked = false;
-        DrawBG();
-        if (!Is3D) DrawMap(true);
-        else {
-          RayCast(true);
-        }
-        DrawFPS(true);
-      } else isButtonPinClicked = true;
-    }
-
-    // FPS counter
-    if (tick < millis() - 1000) {
-      tick = millis();
-      fps = fps_count;
-      fps_count = 0;
-    }
+  // FPS counter
+  uint32_t mil = millis();
+  if (tick < mil - 1000) {
+    tick = mil;
+    fps = fps_count;
+    fps_count = 0;
   }
+}
+
+Wall getWall(const byte px_x, const byte px_y) {
+  if(px_x < 0 || px_x > MapRows || px_y < 0 || px_y > MapColumns) return Wall(0, 0, col_vec3(0), 0, 255, false);
+  return Map[px_x * MapColumns + px_y];
 }
