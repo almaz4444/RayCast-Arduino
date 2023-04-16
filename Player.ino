@@ -12,9 +12,9 @@ void movePlayer() {
   dFpsTime = millisec;
   
   if(abs(paddleX) > deathZoneX) {
-    const float  step     = moveSpeed * dTimeMovement;
-    const float  xMove    = paddleX * step * cos(angle) * 0.01;
-    const float  yMove    = paddleX * step * sin(angle) * 0.01;
+    const float  step     = paddleX * moveSpeed * dTimeMovement * 0.01;
+    const float  xMove    = step * cos(angle);
+    const float  yMove    = step * sin(angle);
     x -= xMove;
     y -= yMove;
     collision(xMove, yMove);

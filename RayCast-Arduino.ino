@@ -30,16 +30,16 @@
 #define MapColumnsTile (MapColumns << BitTile)
 
 // Ray casting
-#define Fow          PI / 3
-#define HalfFow      Fow / 2
-#define NumRays      80
-#define MaxDepth     20
-#define MaxDepthTile MaxDepth >> BitTile
-#define DeltaAngle   Fow / NumRays
-#define Dist         NumRays / (2 * tan(HalfFow))
-#define PrectCoeff   round(Width / NumRays) * Dist * 5
-#define Scale        round(Width / NumRays)
-#define ColorCoeff   255.0 / (MaxDepth - TileField)
+const float Fow          = PI / 3;
+const float HalfFow      = Fow / 2;
+const byte  NumRays      = 80;
+const byte  MaxDepth     = 20;
+const byte  MaxDepthTile = MaxDepth >> BitTile;
+const float DeltaAngle   = Fow / NumRays;
+const float Dist         = NumRays / (2 * tan(HalfFow));
+const byte  PrectCoeff   = round(Width / NumRays) * Dist * 5;
+const byte  Scale        = round(Width / NumRays);
+const float ColorCoeff   = 255.0 / (MaxDepth - TileField);
 
 // Player
 const byte playerSize   = 1;
@@ -91,8 +91,23 @@ float tick, dFpsTime;
 
 int startJoyX, startJoyY;
 
+extern "C" char* sbrk(int incr);
+int freeRam() {
+  char top;
+  return &top - reinterpret_cast<char*>(sbrk(0));
+}
+
 void setup() {
   // Init
+  Serial.begin(115200);
+  tft.initR(INITR_BLACKTAB);
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setRotation(45);
+  
+  pinMode(buttonPin, INPUT_PULLUP);
+  startJoyY = analogRead(JoyY_Pin);
+  startJoyX = analogRead(JoyX_Pin);
+  
   MapInit();
 
   DrawBG();
@@ -100,14 +115,7 @@ void setup() {
 }
 
 void loop() {
-  Serial.begin(115200);
-  tft.initR(INITR_BLACKTAB);
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setRotation(90);
-
-  pinMode(buttonPin, INPUT_PULLUP);
-  startJoyY = analogRead(JoyY_Pin);
-  startJoyX = analogRead(JoyX_Pin);
+  Serial.println(freeRam());
   fps_count++;
 
   // loop
@@ -126,6 +134,6 @@ void loop() {
 }
 
 Wall getWall(const byte px_x, const byte px_y) {
-  if(px_x < 0 || px_x > MapRows || px_y < 0 || px_y > MapColumns) return Wall(0, 0, col_vec3(0), 0, 255, false);
+  if(px_x < 0 || px_x > MapRows || px_y < 0 || px_y > MapColumns) return Wall(0, 0, col_vec3(0), false, false);
   return Map[px_x * MapColumns + px_y];
 }
