@@ -6,17 +6,17 @@ void DrawBG() {
 }
 
 void DrawFPS() {
-  tft.setTextSize(FPS_TextSize);
+  // tft.setTextSize(FPS_TextSize);
   tft.setCursor(5, 5);
   
   if(oldFPS != fps) {
     tft.setTextColor(SkyColor);
-    tft.print("FPS:" + (String)oldFPS);
+    tft.print((String)oldFPS);
     tft.setCursor(5, 5);
 
     oldFPS = fps;
   }
     
   tft.setTextColor(FPSColor);
-  tft.print("FPS:" + (String)fps);
+  tft.print((String)fps);
 }

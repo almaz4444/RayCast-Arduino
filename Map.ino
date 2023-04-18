@@ -2,22 +2,18 @@ void MapInit() {
   // Counting the number of walls
   for(byte i = 0; i < MapRows; i++) {
     for(byte j = 0; j < MapColumns; j++) {
-      const char cell = pgm_read_byte(&StringMap[i][j]);
-      switch (cell) {
+      switch (pgm_read_byte(&StringMap[i][j])) {
         case 'B':
-          Map[i * MapColumns + j] = Wall(i << BitTile, j << BitTile, col_vec3(0, 0, 255), false, true);
+          Map[i * MapColumns + j] = Wall(tft.color565(0, 0, 255), true);
           break;
         case 'G':
-          Map[i * MapColumns + j] = Wall(i << BitTile, j << BitTile, col_vec3(0, 255, 0), false, true);
+          Map[i * MapColumns + j] = Wall(tft.color565(0, 255, 0), true);
           break;
         case 'R':
-          Map[i * MapColumns + j] = Wall(i << BitTile, j << BitTile, col_vec3(255, 0, 0), false, true);
+          Map[i * MapColumns + j] = Wall(tft.color565(255, 0, 0), true);
           break;
         case 'W':
-          Map[i * MapColumns + j] = Wall(i << BitTile, j << BitTile, col_vec3(0, 0, 0), false, true);
-          break;
-        case 'O':
-          Map[i * MapColumns + j] = Wall(i << BitTile, j << BitTile, col_vec3(255, 255, 255), true, true);
+          Map[i * MapColumns + j] = Wall(tft.color565(0, 0, 0), true);
           break;
         case '.':
           x = (x == 0)? (i << BitTile) + TileField : x;

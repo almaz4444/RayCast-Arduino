@@ -1,15 +1,15 @@
 class Wall {
   public:
     Wall() {}
-    Wall(const byte nx, const byte ny, const col_vec3 ncolor, const bool nIsGlass, const bool nIsWall) {
-      x = nx;
-      y = ny;
+    Wall(const bool nIsError) {
+      isWall = false;
+      isError = nIsError;
+    }
+    Wall(const uint ncolor, const bool nIsWall) {
       color = ncolor;
-      isGlass = nIsGlass;
       isWall = nIsWall;
     }
 
-    byte x, y;
-    col_vec3 color;
-    bool isGlass, isWall;
+    uint color;
+    bool isWall, isError;
 };
