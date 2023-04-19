@@ -5,11 +5,11 @@ class Wall {
       isWall = false;
       isError = nIsError;
     }
-    Wall(const uint ncolor, const bool nIsWall) {
+    Wall(const uint16_t ncolor, const bool nIsWall) {
       color = ncolor;
       isWall = nIsWall;
     }
 
-    uint color;
+    uint16_t color;
     bool isWall, isError;
 };

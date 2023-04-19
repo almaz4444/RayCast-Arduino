@@ -52,7 +52,7 @@ const byte FPS_TextSize = 1;
 #define FlorColor  tft.color565( 50,  50,  50)
 #define BlackColor tft.color565(  0,   0,   0)
 
-const PROGMEM char* StringMap[] {
+const char* StringMap[] {
   "BBBBBBBBBB",
   "R  RRRR  R",
   "R R    G R",

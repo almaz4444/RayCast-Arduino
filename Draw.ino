@@ -19,4 +19,5 @@ void DrawFPS() {
     
   tft.setTextColor(FPSColor);
   tft.print((String)fps);
+  Serial.println(fps);
 }

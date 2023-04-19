@@ -1,8 +1,8 @@
-uint oldWalls[NumRays][2];
+uint16_t oldWalls[NumRays][2];
 
 void RaysCasting(const bool isClearDisplay) {
   // Init
-  uint castedWalls[NumRays][2];
+  uint16_t castedWalls[NumRays][2];
   float cur_angle = angle - HalfFow;
   const float angleIncrement = DeltaAngle; // Cache angle increment
 
@@ -22,8 +22,8 @@ void RaysCasting(const bool isClearDisplay) {
     
     float depth_v, depth_h;
     float yv, xh;
-    uint texture_v;
-    uint texture_h;
+    uint16_t texture_v;
+    uint16_t texture_h;
     
     boolean isV_Collided = false;
     boolean isH_Collided = false;
@@ -55,7 +55,7 @@ void RaysCasting(const bool isClearDisplay) {
     }
 
     float depth; 
-    uint color;
+    uint16_t color;
     
     if (depth_v < depth_h) {
       depth = depth_v * cos_diff_angle;
@@ -74,7 +74,7 @@ void RaysCasting(const bool isClearDisplay) {
 
   for (byte ray = 0; ray < NumRays; ray++) {
     const byte proect_height = castedWalls[ray][0];
-    const uint texture = castedWalls[ray][1];
+    const uint16_t texture = castedWalls[ray][1];
     const byte oldWallProjectHeight = oldWalls[ray][0];
     const byte oldWallProjectHeightField = (oldWallProjectHeight >> 1);
     const byte proectHeightField = (proect_height >> 1);
