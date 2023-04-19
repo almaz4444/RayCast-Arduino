@@ -1,30 +1,43 @@
 # Ray cast arduino
-Tested on a 1.8-inch TFT display with ST7789 driver running Arduino Mega 2560 (~5 fps) and Arduino due (~18 fps)<br/>
-***Works on SPI***
 
-Connection:
-  - Display:
-    - GND        -> GND
-    - CS         -> 10
-    - RESET      -> 8
-    - A0 (DC)    -> 9
-    - SDA (MOSI) -> MOSI
-    - SCK        -> SCK
-    - LED (VCC)  -> 3.3V
-  - Joystick:
-    - VCC -> VCC
-    - GND -> GND
-    - VRX -> A1
-    - VRY -> A0
-    - SW  -> 22
+What is this
+------
+Raycasting technology implemented on arduino.<br>
+Tested on `160x128px` TFT display with ``ST7789`` driver under `Arduino Mega 2560 (~18fps)` and `Arduino due (~60fps)`.
 
-Adjust the Width and Height settings to suit your display
+What's ready
+------
+- Raycasting technology
+- Good fps
+- Compatibility (AVR and ARM)
+- Editable map
 
-Map:
-  - "." -> player
-  - "R" -> red wall
-  - "G" -> green wall
-  - "B" -> blue wall
-  - "W" -> black wall
-  - "O" -> glass wall (betta)
-  - " " -> void
+What to do
+------
+- Texturing walls
+- Speed up rendering
+
+Connection
+------
+- Display:
+  - GND        -> GND
+  - CS         -> 10
+  - RESET      -> 8
+  - A0 (DC)    -> 9
+  - SDA (MOSI) -> MOSI
+  - SCK        -> SCK
+  - LED (VCC)  -> 3.3V
+- Joystick:
+  - VCC -> VCC
+  - GND -> GND
+  - VRX -> A1
+  - VRY -> A0
+  - SW  -> 22
+
+Map
+------
+- "." -> player (only 1 per card)
+- "R" -> red wall
+- "G" -> green wall
+- "B" -> blue wall
+- " " -> void
