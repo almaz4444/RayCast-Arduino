@@ -1,42 +1,48 @@
 #include <Adafruit_ST7735.h>
 #include <SPI.h>
 
-#include "walls.h"
+#include "wall.h"
+#include "button.h"
 
 
 // ________Settings________
-#define TFT_CS 10
-#define TFT_RST 9
+#define TFT_CS 6
+#define TFT_RST 7
 #define TFT_DC 8
 
 // Control
-#define JoyX_Pin       A1
-#define JoyY_Pin       A0
-#define buttonPin      22
+#define JoyX_Pin       A0
+#define JoyY_Pin       A1
+#define JoyButtonPin   22
+#define NumRaysUpPin   24
+#define NumRaysDownPin 26
 
 // General
-#define Width          160
-#define Height         128
-#define HeightField    (Height >> 1)
-#define MapRows        10
-#define MapColumns     10
-#define Tile           4
-#define BitTile        2  // 2 ^ BitTile = Tile
-#define TileField      (Tile >> 1)
-#define MapRowsTile    (MapRows << BitTile)
-#define MapColumnsTile (MapColumns << BitTile)
+#define Width           160
+#define Height          128
+#define MaxGameWidth    128
+byte GameWidth  =       128;
+byte GameHeight =       128;
+#define GameHeightField (GameHeight >> 1)
+#define MapRows         10
+#define MapColumns      10
+#define Tile            4
+#define BitTile         2  // 2 ^ BitTile = Tile
+#define TileField       (Tile >> 1)
+#define MapRowsTile     (MapRows << BitTile)
+#define MapColumnsTile  (MapColumns << BitTile)
 
 // Ray casting
 const float Fow          = PI / 3;
 const float HalfFow      = Fow / 2;
-const byte  NumRays      = 80;
 const byte  MaxDepth     = 16;
 const byte  MaxDepthTile = MaxDepth >> BitTile;
-const float DeltaAngle   = Fow / NumRays;
-const float Dist         = NumRays / (2 * tan(HalfFow));
-const byte  PrectCoeff   = round(Width / NumRays) * Dist * 5;
-const byte  Scale        = round(Width / NumRays);
-const float ColorCoeff   = 255.0 / (MaxDepth - TileField);
+
+byte  NumRays    = GameWidth;
+float DeltaAngle;
+float Dist;
+byte  PrectCoeff;
+byte  Scale;
 
 // Player
 #define playerSize  1
@@ -44,13 +50,25 @@ const float ColorCoeff   = 255.0 / (MaxDepth - TileField);
 #define rotateSpeed 0.001
 
 // Font
-const byte FPS_TextSize = 1;
+const byte UI_TextSize = 1;
 
 // Colors
-#define FPSColor   tft.color565(255, 255, 255)
-#define SkyColor   tft.color565(135, 206, 235)
-#define FlorColor  tft.color565( 50,  50,  50)
-#define BlackColor tft.color565(  0,   0,   0)
+#define NormalColor   tft.color565(255, 255, 255)
+#define SelectedColor tft.color565(  0, 255,   0)
+#define SkyColor      tft.color565(135, 206, 235)
+#define FlorColor     tft.color565( 50,  50,  50)
+#define BlackColor    tft.color565(  0,   0,   0)
+
+// UI
+const byte FPS_TextPos[2]     {135,   5};
+const byte NumRays_TextPos[2] {135,  35};
+const byte Width_TextPos[2]   {135,  65};
+const byte Height_TextPos[2]  {135,  95};
+
+// Buttons
+button JoyButton(JoyButtonPin);
+button UpButton(NumRaysUpPin);
+button DownButton(NumRaysDownPin);
 
 const char* StringMap[] {
   "BBBBBBBBBB",
@@ -70,12 +88,14 @@ Wall Map[MapRows * MapColumns];
 
 // ________Init________
 float x, y;
-float angle = 1.5708;
+float angle;
 
-byte fps, fps_count;
+uint fps, fps_count;
 uint32_t tick;
 
 float startJoyX, startJoyY;
+
+byte changeHandle;
 
 // extern "C" char* sbrk(int incr);
 // int freeRam() {
@@ -83,43 +103,40 @@ float startJoyX, startJoyY;
 //   return &top - reinterpret_cast<char*>(sbrk(0));
 // }
 
+uint16_t oldWalls[Width][2];
+  
+
 void setup() {
   // Init
   Serial.begin(115200);
+  // Wire.begin();
   tft.initR(INITR_BLACKTAB);
-  tft.fillScreen(ST77XX_BLACK);
   tft.setRotation(45);
   tft.setSPISpeed(100000000000000000000000000000);
   
-  pinMode(buttonPin, INPUT_PULLUP);
   startJoyY = 1.0 / analogRead(JoyY_Pin);
   startJoyX = 1.0 / analogRead(JoyX_Pin);
   
   MapInit();
-
-  DrawBG();
-  RaysCasting(true);
-  
-  tft.setTextSize(FPS_TextSize);
+  UpdateCastSettings();
 }
 
 void loop() {
   // Serial.println(freeRam());
   fps_count++;
 
-  movePlayer();
+  InputHandle();
   
   // Rendering
-  RaysCasting(false);
-  DrawFPS();
+  RaysCasting();
+  DrawUI();
 
   // FPS counter
-  uint32_t mil = millis();
+  uint64_t mil = millis();
   if (tick < mil - 1000) {
     tick = mil;
     fps = fps_count;
     fps_count = 0;
-    // Serial.println(fps);    
   }
 }
 

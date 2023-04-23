@@ -1,10 +1,9 @@
-uint16_t oldWalls[NumRays][2];
 
-void RaysCasting(const bool isClearDisplay) {
+void RaysCasting() {
   // Init
-  uint16_t castedWalls[NumRays][2];
   float cur_angle = angle - HalfFow;
-  const float angleIncrement = DeltaAngle; // Cache angle increment
+  
+  uint16_t castedWalls[NumRays][2];
 
   // For through the rays
   for (byte ray = 0; ray < NumRays; ray++) {
@@ -54,52 +53,14 @@ void RaysCasting(const bool isClearDisplay) {
       }
     }
 
-    float depth; 
-    uint16_t color;
-    
-    if (depth_v < depth_h) {
-      depth = depth_v * cos_diff_angle;
-      color = texture_v;
-    } else {
-      depth = depth_h * cos_diff_angle;
-      color = texture_h;
-    }
+    const float depth = (depth_v < depth_h)? depth_v * cos_diff_angle : depth_h * cos_diff_angle;
 
-    castedWalls[ray][0] = min(Height, PrectCoeff / max(0, depth));
-    castedWalls[ray][1] = (depth >= MaxDepth - Tile)? BlackColor : color;
+    castedWalls[ray][0] = min(GameHeight, PrectCoeff / depth);
+    castedWalls[ray][1] = (depth >= MaxDepth - Tile)? BlackColor : ((depth_v < depth_h)? texture_v : texture_h);
 
     // Updating the angle
-    cur_angle += angleIncrement;
+    cur_angle += DeltaAngle;
   }
 
-  for (byte ray = 0; ray < NumRays; ray++) {
-    const byte proect_height = castedWalls[ray][0];
-    const uint16_t texture = castedWalls[ray][1];
-    const byte oldWallProjectHeight = oldWalls[ray][0];
-    const byte oldWallProjectHeightField = (oldWallProjectHeight >> 1);
-    const byte proectHeightField = (proect_height >> 1);
-    const byte brickY = HeightField - proectHeightField;
-    const byte differenceWallsHeight = oldWallProjectHeightField - proectHeightField;
-    const bool isWallChanged = oldWalls[ray][1] != texture || isClearDisplay;
-    const byte brickX = ray * Scale;
-
-    // fill the voids
-    if (oldWallProjectHeight > proect_height) {
-      const byte oldBrickYTop = HeightField - oldWallProjectHeightField;
-      tft.fillRect(brickX, oldBrickYTop, Scale, differenceWallsHeight, SkyColor);
-      tft.fillRect(brickX, oldBrickYTop + oldWallProjectHeightField + proectHeightField, Scale, differenceWallsHeight + 1, FlorColor);
-    }
-    
-    // Render of new walls
-    if(isWallChanged) {
-      tft.fillRect(brickX, brickY, Scale, proect_height, texture);
-    } else if(oldWallProjectHeight < proect_height) {
-      const byte oldBrickY = proectHeightField - oldWallProjectHeightField;
-      tft.fillRect(brickX, brickY, Scale, oldBrickY, texture);
-      tft.fillRect(brickX, HeightField + oldWallProjectHeightField, Scale, oldBrickY, texture);
-    }
-    // Remember the walls
-    oldWalls[ray][0] = proect_height;
-    oldWalls[ray][1] = texture;
-  }
+  DrawCastWalls(castedWalls);
 }
