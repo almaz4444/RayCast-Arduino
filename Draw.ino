@@ -1,13 +1,22 @@
-
 void DrawBG() {
   tft.fillScreen(BlackColor);
   tft.fillRect(0, 0, GameWidth, GameHeightField, SkyColor);
   tft.fillRect(0, GameHeightField, GameWidth, GameHeightField, FlorColor);
 }
 
-uint oldFPS;
+void DrawUI() {
+  DrawFPS();
+}
+
+uint16_t oldFPS;
 size_t fpsSize;
 void DrawFPS() {
+  if(!fpsSize) {
+    tft.setCursor(FPS_TextPos[0], FPS_TextPos[1]);
+    tft.setTextSize(UI_TextSize);
+    tft.setTextColor(NormalColor);
+    fpsSize = tft.println("FPS:") << 1;
+  }
   if(oldFPS != fps) {
     tft.setTextSize(UI_TextSize);
     tft.setCursor(FPS_TextPos[0], FPS_TextPos[1] + fpsSize);
@@ -17,10 +26,6 @@ void DrawFPS() {
     tft.setCursor(FPS_TextPos[0], FPS_TextPos[1] + fpsSize);
     
     tft.setTextColor(NormalColor);
-    if(!fpsSize) {
-      fpsSize = tft.println("FPS:") << 1;
-      tft.setCursor(FPS_TextPos[0], FPS_TextPos[1] + fpsSize);
-    }
     tft.print((String)fps);
 
     oldFPS = fps;
@@ -63,12 +68,6 @@ void DrawGameHeight() {
   tft.print((String)GameHeight);
 }
 
-void DrawUI() {
-  DrawFPS();
-}
-
-// uint16_t oldWalls[NumRays][2];
-// uint16_t castedWalls[NumRays][2];
 void DrawCastWalls(uint16_t castedWalls[Width][2]) {
   for (byte ray = 0; ray < NumRays; ray++) {
     const byte proect_height = castedWalls[ray][0];

@@ -23,3 +23,9 @@ void ResetDisplay() {
   DrawGameWidth();
   DrawGameHeight();
 }
+
+void ButtonsTick() {
+  JoyButton.tick();
+  UpButton.tick();
+  DownButton.tick();
+}

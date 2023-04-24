@@ -3,14 +3,11 @@ unsigned long dFpsTime;
 void InputHandle() {
   MoveHandle();
 
-  if(JoyButton.click()) {
-    if(changeHandle < 2) changeHandle++;
-    else changeHandle = 0;
+  if(JoyButton.isPress()) {
+    if(++changeHandle > 2) changeHandle = 0;
     ResetValues();
     ResetDisplay();
   }
-
-  Serial.println(changeHandle);
 
   switch(changeHandle) {
     case 0:
@@ -25,8 +22,8 @@ void InputHandle() {
   }
 }
 
-float move_acceleration = 0.0001;
-float rotate_acceleration = 0.0001;
+const float move_acceleration = 0.000001;
+const float rotate_acceleration = 0.000001;
 float current_move_speed = 0;
 float current_rotate_speed = 0;
 
@@ -36,7 +33,7 @@ void MoveHandle() {
   const int joyY = round(analogRead(JoyY_Pin) * startJoyY - 1);
 
   if (joyX || joyY) {
-    unsigned long millisec = millis();
+    const unsigned long millisec = millis();
     const byte dTimeMovement = millisec - dFpsTime;
     dFpsTime = millisec;
 
@@ -62,36 +59,36 @@ void MoveHandle() {
 }
 
 void ChangeNumRaysHandle() {
-  if(UpButton.click() && NumRays < GameWidth) {
+  if(UpButton.isPress() && NumRays < GameWidth) {
     NumRays = NumRays << 1;
     UpdateCastSettings();
   }
-  if(DownButton.click() && NumRays > 1) {
+  if(DownButton.isPress() && NumRays > 1) {
     NumRays = NumRays >> 1;
     UpdateCastSettings();
   }
 }
 
 void ChangeWidthHandle() {
-  if(UpButton.click() && GameWidth < MaxGameWidth) {
-    GameWidth += 10;
+  if(UpButton.isPress() && GameWidth < MaxGameWidth) {
+    GameWidth = GameWidth << 1;
     NumRays = GameWidth;
     UpdateCastSettings();
   }
-  if(DownButton.click() && NumRays > 10) {
-    GameWidth -= 10;
+  if(DownButton.isPress() && GameWidth > 4) {
+    GameWidth = GameWidth >> 1;
     NumRays = GameWidth;
     UpdateCastSettings();
   }
 }
 
 void ChangeHeightHandle() {
-  if(UpButton.click() && GameHeight < Height) {
-    GameHeight += 10;
+  if(UpButton.isPress() && GameHeight < Height) {
+    GameHeight = GameHeight << 1;
     UpdateCastSettings();
   }
-  if(DownButton.click() && NumRays > 10) {
-    GameHeight -= 10;
+  if(DownButton.isPress() && GameHeight > 4) {
+    GameHeight = GameHeight >> 1;
     UpdateCastSettings();
   }
 }

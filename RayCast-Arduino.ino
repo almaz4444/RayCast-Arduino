@@ -1,8 +1,16 @@
 #include <Adafruit_ST7735.h>
 #include <SPI.h>
+#include <GyverButton.h>
 
 #include "wall.h"
-#include "button.h"
+
+
+// ________Macros________
+#define EVERY_MS(x) \
+  static uint32_t tmr;\
+  bool flag = millis() - tmr >= (x);\
+  if (flag) tmr += (x);\
+  if (flag)
 
 
 // ________Settings________
@@ -14,8 +22,8 @@
 #define JoyX_Pin       A0
 #define JoyY_Pin       A1
 #define JoyButtonPin   22
-#define NumRaysUpPin   24
-#define NumRaysDownPin 26
+#define UpButtonPin   28
+#define DownButtonPin 34
 
 // General
 #define Width           160
@@ -66,10 +74,11 @@ const byte Width_TextPos[2]   {135,  65};
 const byte Height_TextPos[2]  {135,  95};
 
 // Buttons
-button JoyButton(JoyButtonPin);
-button UpButton(NumRaysUpPin);
-button DownButton(NumRaysDownPin);
+GButton JoyButton(JoyButtonPin);
+GButton UpButton(UpButtonPin);
+GButton DownButton(DownButtonPin);
 
+// Map
 const char* StringMap[] {
   "BBBBBBBBBB",
   "R  RRRR  R",
@@ -82,15 +91,15 @@ const char* StringMap[] {
   "B G  G   B",
   "RRRRRRRRRR",
 };
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-
 Wall Map[MapRows * MapColumns];
 
-// ________Init________
-float x, y;
-float angle;
+// Dispaly
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
-uint fps, fps_count;
+// Init
+float x, y, angle;
+
+unsigned int fps, fps_count;
 uint32_t tick;
 
 float startJoyX, startJoyY;
@@ -107,6 +116,9 @@ uint16_t oldWalls[Width][2];
   
 
 void setup() {
+  pinMode(JoyButtonPin, INPUT_PULLUP);
+  pinMode(UpButtonPin, INPUT_PULLUP);
+  pinMode(DownButtonPin, INPUT_PULLUP);
   // Init
   Serial.begin(115200);
   // Wire.begin();
@@ -125,6 +137,7 @@ void loop() {
   // Serial.println(freeRam());
   fps_count++;
 
+  ButtonsTick();
   InputHandle();
   
   // Rendering
@@ -132,7 +145,7 @@ void loop() {
   DrawUI();
 
   // FPS counter
-  uint64_t mil = millis();
+  const uint64_t mil = millis();
   if (tick < mil - 1000) {
     tick = mil;
     fps = fps_count;

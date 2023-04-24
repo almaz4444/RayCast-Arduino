@@ -1,4 +1,3 @@
-
 void RaysCasting() {
   // Init
   float cur_angle = angle - HalfFow;
