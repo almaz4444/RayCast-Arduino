@@ -4,16 +4,26 @@
 
 #include "wall.h"
 
+/* ________Define________ */
+// #define DEBUG_ENABLE
+// #define RAM_GETTER_ENABLE
 
-// ________Macros________
-#define EVERY_MS(x) \
-  static uint32_t tmr;\
-  bool flag = millis() - tmr >= (x);\
-  if (flag) tmr += (x);\
-  if (flag)
+// Macros
+#ifdef DEBUG_ENABLE
+#define DEBUG(x) Serial.println(x)
+#else
+#define DEBUG(x)
+#endif
 
+#ifdef RAM_GETTER_ENABLE
+extern "C" char* sbrk(int incr);
+int freeRam() {
+  char top;
+  return &top - reinterpret_cast<char*>(sbrk(0));
+}
+#endif
 
-// ________Settings________
+/*  ________Settings________ */
 #define TFT_CS 6
 #define TFT_RST 7
 #define TFT_DC 8
@@ -25,32 +35,58 @@
 #define UpButtonPin   28
 #define DownButtonPin 34
 
-// General
-#define Width           160
-#define Height          128
-#define MaxGameWidth    128
-byte GameWidth  =       128;
-byte GameHeight =       128;
+// Dispaly
+#define DisplayWidth    160
+#define DisplayHeight   128
+
+#define MaxGameWidth    DisplayHeight
+#define MinGameWidth    4
+#define MaxGameHeight   DisplayHeight
+#define MinGameHeight   4
+
+byte    GameWidth  =    MaxGameWidth;
+byte    GameHeight =    DisplayHeight;
+
 #define GameHeightField (GameHeight >> 1)
-#define MapRows         10
-#define MapColumns      10
+
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
+
+// Map
 #define Tile            4
 #define BitTile         2  // 2 ^ BitTile = Tile
 #define TileField       (Tile >> 1)
+
+#define MapRows         10
+#define MapColumns      10
 #define MapRowsTile     (MapRows << BitTile)
 #define MapColumnsTile  (MapColumns << BitTile)
 
+const char* StringMap[] {
+  "BBBBBBBBBB",
+  "R  RRRR  R",
+  "R R    G R",
+  "R GGGG   R",
+  "R  .   GGR",
+  "B BBBB   B",
+  "B B  RRR B",
+  "B BR     B",
+  "B G  G   B",
+  "RRRRRRRRRR",
+};
+Wall Map[MapRows * MapColumns];
+
 // Ray casting
+#define MaxNumRays GameWidth
+#define MinNumRays 1
+
 const float Fow          = PI / 3;
 const float HalfFow      = Fow / 2;
 const byte  MaxDepth     = 16;
 const byte  MaxDepthTile = MaxDepth >> BitTile;
 
 byte  NumRays    = GameWidth;
-float DeltaAngle;
-float Dist;
-byte  PrectCoeff;
-byte  Scale;
+float DeltaAngle, Dist;
+byte  PrectCoeff, Scale;
 
 // Player
 #define playerSize  1
@@ -67,7 +103,7 @@ const byte UI_TextSize = 1;
 #define FlorColor     tft.color565( 50,  50,  50)
 #define BlackColor    tft.color565(  0,   0,   0)
 
-// UI
+// UI positions
 const byte FPS_TextPos[2]     {135,   5};
 const byte NumRays_TextPos[2] {135,  35};
 const byte Width_TextPos[2]   {135,  65};
@@ -77,67 +113,48 @@ const byte Height_TextPos[2]  {135,  95};
 GButton JoyButton(JoyButtonPin);
 GButton UpButton(UpButtonPin);
 GButton DownButton(DownButtonPin);
+#define ButtonsDebounce 150
 
-// Map
-const char* StringMap[] {
-  "BBBBBBBBBB",
-  "R  RRRR  R",
-  "R R    G R",
-  "R GGGG   R",
-  "R  .   GGR",
-  "B BBBB   B",
-  "B B  RRR B",
-  "B BR     B",
-  "B G  G   B",
-  "RRRRRRRRRR",
-};
-Wall Map[MapRows * MapColumns];
 
-// Dispaly
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-
-// Init
+/*  ________Init________ */
+// Player
 float x, y, angle;
 
+// FPS
 unsigned int fps, fps_count;
 uint32_t tick;
 
-float startJoyX, startJoyY;
+// Joystick
+float startJoyDeviderX, startJoyDeviderY;
 
-byte changeHandle;
-
-// extern "C" char* sbrk(int incr);
-// int freeRam() {
-//   char top;
-//   return &top - reinterpret_cast<char*>(sbrk(0));
-// }
-
-uint16_t oldWalls[Width][2];
-  
+// Other
+byte changeableGameSetting;
+uint16_t oldWalls[MaxGameWidth][2];
 
 void setup() {
-  pinMode(JoyButtonPin, INPUT_PULLUP);
-  pinMode(UpButtonPin, INPUT_PULLUP);
-  pinMode(DownButtonPin, INPUT_PULLUP);
   // Init
+  #ifdef DEBUG_ENABLE
   Serial.begin(115200);
-  // Wire.begin();
+  #endif
+
   tft.initR(INITR_BLACKTAB);
   tft.setRotation(45);
-  tft.setSPISpeed(100000000000000000000000000000);
+  tft.setSPISpeed(100000000000000000000000000000); // If you are having problems with the display, try removing this line
   
-  startJoyY = 1.0 / analogRead(JoyY_Pin);
-  startJoyX = 1.0 / analogRead(JoyX_Pin);
+  startJoyDeviderX = 1.0 / analogRead(JoyX_Pin);
+  startJoyDeviderY = 1.0 / analogRead(JoyY_Pin);
   
   MapInit();
   UpdateCastSettings();
+  SetSettingsButton();
 }
 
 void loop() {
-  // Serial.println(freeRam());
+  // DEBUG(freeRam());
   fps_count++;
 
-  ButtonsTick();
+  // Update
+  Tick();
   InputHandle();
   
   // Rendering
@@ -153,7 +170,7 @@ void loop() {
   }
 }
 
+const Wall errorWall = Wall(true);
 Wall getWall(const byte px_x, const byte px_y) {
-  if(px_x < 0 || px_x > MapRows || px_y < 0 || px_y > MapColumns) return Wall(true);
-  return Map[px_x * MapColumns + px_y];
+  return (px_x < 0 || px_x > MapRows || px_y < 0 || px_y > MapColumns)? errorWall : Map[px_x * MapColumns + px_y];
 }

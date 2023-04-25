@@ -35,7 +35,7 @@ void DrawFPS() {
 size_t numRaysSize;
 void DrawNumRaysCount() {
   tft.setTextSize(UI_TextSize);
-  (changeHandle == 0)? tft.setTextColor(SelectedColor) : tft.setTextColor(NormalColor);
+  (changeableGameSetting == 0)? tft.setTextColor(SelectedColor) : tft.setTextColor(NormalColor);
   tft.setCursor(NumRays_TextPos[0], NumRays_TextPos[1] + numRaysSize);
   if(!numRaysSize) {
     numRaysSize = tft.println("RC:") << 1;
@@ -47,7 +47,7 @@ void DrawNumRaysCount() {
 size_t widthTextSize;
 void DrawGameWidth() {
   tft.setTextSize(UI_TextSize);
-  (changeHandle == 1)? tft.setTextColor(SelectedColor) : tft.setTextColor(NormalColor);
+  (changeableGameSetting == 1)? tft.setTextColor(SelectedColor) : tft.setTextColor(NormalColor);
   tft.setCursor(Width_TextPos[0], Width_TextPos[1] + widthTextSize);
   if(!widthTextSize) {
     widthTextSize = tft.println("W:") << 1;
@@ -59,7 +59,7 @@ void DrawGameWidth() {
 size_t heightTextSize;
 void DrawGameHeight() {
   tft.setTextSize(UI_TextSize);
-  (changeHandle == 2)? tft.setTextColor(SelectedColor) : tft.setTextColor(NormalColor);
+  (changeableGameSetting == 2)? tft.setTextColor(SelectedColor) : tft.setTextColor(NormalColor);
   tft.setCursor(Height_TextPos[0], Height_TextPos[1] + heightTextSize);
   if(!heightTextSize) {
     heightTextSize = tft.println("H:") << 1;
@@ -68,7 +68,7 @@ void DrawGameHeight() {
   tft.print((String)GameHeight);
 }
 
-void DrawCastWalls(uint16_t castedWalls[Width][2]) {
+void DrawCastWalls(const uint16_t castedWalls[MaxGameWidth][2]) {
   for (byte ray = 0; ray < NumRays; ray++) {
     const byte proect_height = castedWalls[ray][0];
     const uint16_t texture = castedWalls[ray][1];
