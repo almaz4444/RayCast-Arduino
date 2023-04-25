@@ -1,43 +1,74 @@
-# Ray cast arduino
+# Arduino Raycasting Game
 
-What is this
-------
-Raycasting technology implemented on arduino.<br>
-Tested on `160x128px` TFT display with ``ST7789`` driver under `Arduino Mega 2560 (~18fps)` and `Arduino due (~60fps)`.
+This is a raycasting game implementation for the Arduino boards. The game consists of a 2D map with walls and player movement using a joystick. The game has a raycasting engine to render the 3D environment based on the 2D map, and a simple UI with an FPS counter and other settings.
 
-What's ready
-------
-- Raycasting technology
-- Good fps
-- Compatibility (AVR and ARM)
-- Editable map
+Tested on `160x128px` TFT display with ``ST7789`` driver under `Arduino Mega 2560 (~20fps)` and `Arduino due (~64fps)`.
 
-What to do
-------
-- Texturing walls
-- Speed up rendering
+## Dependencies
 
-Connection
-------
+The following libraries are required to compile and run this project:
+
+- [Adafruit_ST7735](https://github.com/adafruit/Adafruit-ST7735-Library): For managing the TFT color display.
+- [GyverButton](https://github.com/GyverLibs/GyverButton): For managing button debounce and handling user input.
+- SPI: to communicate the board with the display via the SPI interface. This library is part of the Arduino IDE.
+
+## Features
+
+- Raycasting engine for 3D rendering
+- Simple user interface with fps counter, settings for game window size and number of beams
+- Control joystick and buttons to move the player and select settings
+- Map with walls and player starting position
+
+## Usage
+
+1. Download this repository
+2. Make sure you have the Arduino IDE installed.
+3. Install the required libraries (`Adafruit_ST7735` and `GyverButton`) using the links above.
+4. Open the Arduino IDE and load the code into the editor.
+5. Connect your Arduino board to your computer.
+6. Select your board type and port in the Arduino IDE.
+7. Upload the code to your board by clicking the "Upload" button.
+
+## Connection
+
 - Display:
   - GND        -> GND
-  - CS         -> 10
-  - RESET      -> 8
-  - A0 (DC)    -> 9
+  - CS         -> 6
+  - RESET      -> 7
+  - A0 (DC)    -> 8
   - SDA (MOSI) -> MOSI
   - SCK        -> SCK
   - LED (VCC)  -> 3.3V
 - Joystick:
   - VCC -> VCC
   - GND -> GND
-  - VRX -> A1
-  - VRY -> A0
+  - VRX -> A0
+  - VRY -> A1
   - SW  -> 22
+- Mechanical button 1:
+  - Pin1 -> GND
+  - Pin2 -> 28
+- Mechanical button 2:
+  - Pin1 -> GND
+  - Pin2 -> 34
+Change button pins if necessary
 
-Map
-------
+## Building a map
+
+Keys:
 - "." -> player (only 1 per card)
 - "R" -> red wall
 - "G" -> green wall
 - "B" -> blue wall
 - " " -> void
+Change MapRows and MapColumns to your values
+
+## What's ready
+- Raycasting technology
+- Good fps
+- Compatibility (AVR and ARM)
+- Editable map
+
+## What to do
+- Texturing walls
+
