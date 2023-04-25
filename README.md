@@ -1,3 +1,18 @@
+![](https://komarev.com/ghpvc/?username=almaz4444)
+<pre>
+      ___           ___           ___           ___           ___           ___           ___                       ___           ___
+     /\  \         /\  \         |\__\         /\  \         /\  \         /\  \         /\  \          ___        /\__\         /\  \
+    /::\  \       /::\  \        |:|  |       /::\  \       /::\  \       /::\  \        \:\  \        /\  \      /::|  |       /::\  \
+   /:/\:\  \     /:/\:\  \       |:|  |      /:/\:\  \     /:/\:\  \     /:/\ \  \        \:\  \       \:\  \    /:|:|  |      /:/\:\  \
+  /::\~\:\  \   /::\~\:\  \      |:|__|__   /:/  \:\  \   /::\~\:\  \   _\:\~\ \  \       /::\  \      /::\__\  /:/|:|  |__   /:/  \:\  \
+ /:/\:\ \:\__\ /:/\:\ \:\__\     /::::\__\ /:/__/ \:\__\ /:/\:\ \:\__\ /\ \:\ \ \__\     /:/\:\__\  __/:/\/__/ /:/ |:| /\__\ /:/__/_\:\__\
+ \/_|::\/:/  / \/__\:\/:/  /    /:/~~/~    \:\  \  \/__/ \/__\:\/:/  / \:\ \:\ \/__/    /:/  \/__/ /\/:/  /    \/__|:|/:/  / \:\  /\ \/__/
+    |:|::/  /       \::/  /    /:/  /       \:\  \            \::/  /   \:\ \:\__\     /:/  /      \::/__/         |:/:/  /   \:\ \:\__\
+    |:|\/__/        /:/  /     \/__/         \:\  \           /:/  /     \:\/:/  /     \/__/        \:\__\         |::/  /     \:\/:/  /
+    |:|  |         /:/  /                     \:\__\         /:/  /       \::/  /                    \/__/         /:/  /       \::/  /
+     \|__|         \/__/                       \/__/         \/__/         \/__/                                   \/__/         \/__/
+</pre>
+
 # Arduino Raycasting Game
 
 This is a raycasting game implementation for the Arduino boards. The game consists of a 2D map with walls and player movement using a joystick. The game has a raycasting engine to render the 3D environment based on the 2D map, and a simple UI with an FPS counter and other settings.
@@ -27,48 +42,50 @@ The following libraries are required to compile and run this project:
 4. Open the Arduino IDE and load the code into the editor.
 5. Connect your Arduino board to your computer.
 6. Select your board type and port in the Arduino IDE.
-7. Upload the code to your board by clicking the "Upload" button.
+7. Upload the code to your board by clicking the `"Upload"` button.
 
 ## Connection
 
 - Display:
-  - GND        -> GND
-  - CS         -> 6
-  - RESET      -> 7
-  - A0 (DC)    -> 8
-  - SDA (MOSI) -> MOSI
-  - SCK        -> SCK
-  - LED (VCC)  -> 3.3V
+  - ``GND``        -> ``GND``
+  - ``CS``         -> ``6``
+  - ``RESET``      -> ``7``
+  - ``A0 (DC)``    -> ``8``
+  - ``SDA (MOSI)`` -> ``MOSI``
+  - ``SCK``        -> ``SCK``
+  - ``LED (VCC)``  -> ``3.3V``
 - Joystick:
-  - VCC -> VCC
-  - GND -> GND
-  - VRX -> A0
-  - VRY -> A1
-  - SW  -> 22
+  - ``VCC`` -> ``VCC``
+  - ``GND`` -> ``GND``
+  - ``VRX`` -> ``A0``
+  - ``VRY`` -> ``A1``
+  - ``SW``  -> ``22``
 - Mechanical button 1:
-  - Pin1 -> GND
-  - Pin2 -> 28
+  - ``Pin1`` -> ``GND``
+  - ``Pin2`` -> ``28``
 - Mechanical button 2:
-  - Pin1 -> GND
-  - Pin2 -> 34
-Change button pins if necessary
+  - ``Pin1`` -> ``GND``
+  - ``Pin2`` -> ``34``
+  
+Change button pins if necessary.
 
 ## Building a map
 
 Keys:
-- "." -> player (only 1 per card)
-- "R" -> red wall
-- "G" -> green wall
-- "B" -> blue wall
-- " " -> void
-Change MapRows and MapColumns to your values
+- ``"."`` -> player (only 1 per card)
+- ``"R"`` -> red wall
+- ``"G"`` -> green wall
+- ``"B"`` -> blue wall
+- ``" "`` -> void
+Change MapRows and MapColumns to your values.
 
 ## What's ready
-- Raycasting technology
-- Good fps
-- Compatibility (AVR and ARM)
-- Editable map
+- Raycasting technology.
+- Good fps.
+- Compatibility (AVR and ARM).
+- Editable map.
 
 ## What to do
-- Texturing walls
+- Texturing walls.
 
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=15&pause=1000&color=F7C11C&background=00FFE31A&center=true&vCenter=true&repeat=false&width=435&height=40&lines=Arduino+raycasting+game)](https://git.io/typing-svg)
