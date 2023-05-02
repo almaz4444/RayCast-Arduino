@@ -24,12 +24,12 @@ The following libraries are required to compile and run this project:
 ## Usage
 
 1. Download this repository
-2. Make sure you have the Arduino IDE installed.
+2. Make sure you have VSCode and the PlatformIO extension installed.
 3. Install the required libraries (`Adafruit_ST7735` and `GyverButton`) using the links above.
-4. Open the Arduino IDE and load the code into the editor.
-5. Connect your Arduino board to your computer.
-6. Select your board type and port in the Arduino IDE.
-7. Upload the code to your board by clicking the `"Upload"` button.
+4. Open VSCode and upload the code to the editor.
+5. Connect the Arduino board to the computer.
+6. Select the board type and port in the platformio.ini file.
+7. Upload the code to your board by clicking the Upload button.
 
 ## Connection
 
@@ -46,11 +46,13 @@ The following libraries are required to compile and run this project:
   - ``GND`` -> ``GND``
   - ``VRX`` -> ``A0``
   - ``VRY`` -> ``A1``
-  - ``SW``  -> ``22``
 - Mechanical button 1:
   - ``Pin1`` -> ``GND``
-  - ``Pin2`` -> ``28``
+  - ``Pin2`` -> ``22``
 - Mechanical button 2:
+  - ``Pin1`` -> ``GND``
+  - ``Pin2`` -> ``30``
+- Mechanical button 3:
   - ``Pin1`` -> ``GND``
   - ``Pin2`` -> ``34``
   
