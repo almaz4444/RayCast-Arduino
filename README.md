@@ -46,11 +46,13 @@ The following libraries are required to compile and run this project:
   - ``GND`` -> ``GND``
   - ``VRX`` -> ``A0``
   - ``VRY`` -> ``A1``
-  - ``SW``  -> ``22``
 - Mechanical button 1:
   - ``Pin1`` -> ``GND``
-  - ``Pin2`` -> ``28``
+  - ``Pin2`` -> ``22``
 - Mechanical button 2:
+  - ``Pin1`` -> ``GND``
+  - ``Pin2`` -> ``30``
+- Mechanical button 3:
   - ``Pin1`` -> ``GND``
   - ``Pin2`` -> ``34``
   
