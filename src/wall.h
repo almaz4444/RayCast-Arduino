@@ -2,19 +2,17 @@ class Wall
 {
 public:
   Wall() {}
-  Wall(const bool nIsError)
+  Wall(const bool n_IsError)
   {
-    isError = nIsError;
+    isError = n_IsError;
     isWall = false;
   }
-  Wall(const uint16_t ncolor, const char **ntexture)
+  Wall(const uint16_t n_color, const bool n_isWall)
   {
-    color = ncolor;
-    isWall = true;
-    texture = ntexture;
+    color = n_color;
+    isWall = n_isWall;
   }
 
   uint16_t color;
   bool isWall, isError;
-  const char **texture;
 };

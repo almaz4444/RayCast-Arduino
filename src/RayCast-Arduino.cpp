@@ -1,12 +1,10 @@
-#include <SPI.h>
 #include <Adafruit_ST7735.h>
 #include <GyverButton.h>
 
 #include "wall.h"
-#include "textures.h"
 
 /* ________Define________ */
-#define DEBUG_ENABLE
+// #define DEBUG_ENABLE
 // #define RAM_GETTER_ENABLE
 
 // Macros
@@ -69,7 +67,7 @@ const char *StringMap[]{
     "R GGGG   R",
     "R  .   GGR",
     "B BBBB   B",
-    "B B  RRR B",
+    "B B   RR B",
     "B BR     B",
     "B G  G   B",
     "RRRRRRRRRR",
@@ -131,6 +129,40 @@ float startJoyDeviderX, startJoyDeviderY;
 byte changeableGameSetting;
 bool isFullScreenGame = false;
 uint16_t oldWalls[DisplayWidth][2];
+
+/* ________MAP________ */
+const Wall errorWall = Wall(true);
+Wall getWall(const byte px_x, const byte px_y)
+{
+  return (px_x < 0 || px_x > MapRows || px_y < 0 || px_y > MapColumns) ? errorWall : Map[px_x * MapColumns + px_y];
+}
+
+void MapInit()
+{
+  // Counting the number of walls
+  for (byte i = 0; i < MapRows; i++)
+  {
+    for (byte j = 0; j < MapColumns; j++)
+    {
+      switch (pgm_read_byte(&StringMap[i][j]))
+      {
+      case 'B':
+        Map[i * MapColumns + j] = Wall(tft.color565(0, 0, 255), true);
+        break;
+      case 'G':
+        Map[i * MapColumns + j] = Wall(tft.color565(0, 255, 0), true);
+        break;
+      case 'R':
+        Map[i * MapColumns + j] = Wall(tft.color565(255, 0, 0), true);
+        break;
+      case '.':
+        x = (i << BitTile) + TileField;
+        y = (j << BitTile) + TileField;
+        break;
+      }
+    }
+  }
+}
 
 /* ________DRAW________ */
 void DrawBG()
@@ -214,7 +246,7 @@ void DrawCastWalls(const uint16_t castedWalls[MaxGameWidth][2])
   for (byte ray = 0; ray < NumRays; ray++)
   {
     const byte proect_height = castedWalls[ray][0];
-    const uint16_t texture = castedWalls[ray][1];
+    const uint16_t color = castedWalls[ray][1];
     const byte oldWallProjectHeight = oldWalls[ray][0];
     const byte oldWallProjectHeightField = (oldWallProjectHeight >> 1);
     const byte proectHeightField = (proect_height >> 1);
@@ -231,25 +263,20 @@ void DrawCastWalls(const uint16_t castedWalls[MaxGameWidth][2])
     }
 
     // Render of new walls
-    if (oldWalls[ray][1] != texture)
+    if (oldWalls[ray][1] != color)
     {
-      tft.fillRect(brickX, brickY, Scale, proect_height, texture);
+      tft.fillRect(brickX, brickY, Scale, proect_height, color);
     }
     else if (oldWallProjectHeight < proect_height)
     {
       const byte oldBrickY = proectHeightField - oldWallProjectHeightField;
-      tft.fillRect(brickX, brickY, Scale, oldBrickY, texture);
-      tft.fillRect(brickX, GameHeightField + oldWallProjectHeightField, Scale, oldBrickY, texture);
+      tft.fillRect(brickX, brickY, Scale, oldBrickY, color);
+      tft.fillRect(brickX, GameHeightField + oldWallProjectHeightField, Scale, oldBrickY, color);
     }
     // Remember the walls
     oldWalls[ray][0] = proect_height;
-    oldWalls[ray][1] = texture;
+    oldWalls[ray][1] = color;
   }
-}
-
-void DrawUI()
-{
-  DrawFPS();
 }
 
 /* ________UTILS________ */
@@ -290,7 +317,7 @@ void UpdateCastSettings()
   }
 }
 
-void Tick()
+void ButtonsTick()
 {
   SelectButton.tick();
   UpButton.tick();
@@ -305,51 +332,16 @@ void SetSettingsButton()
   SelectButton.setTimeout(ButtonsDebounce + 500);
 }
 
-/* ________MAP________ */
-const Wall errorWall = Wall(true);
-Wall getWall(const byte px_x, const byte px_y)
-{
-  return (px_x < 0 || px_x > MapRows || px_y < 0 || px_y > MapColumns) ? errorWall : Map[px_x * MapColumns + px_y];
-}
-
-void MapInit()
-{
-  // Counting the number of walls
-  for (byte i = 0; i < MapRows; i++)
-  {
-    for (byte j = 0; j < MapColumns; j++)
-    {
-      switch (pgm_read_byte(&StringMap[i][j]))
-      {
-      case 'B':
-        Map[i * MapColumns + j] = Wall(tft.color565(0, 0, 255), WallTextureR);
-        break;
-      case 'G':
-        Map[i * MapColumns + j] = Wall(tft.color565(0, 255, 0), WallTextureG);
-        break;
-      case 'R':
-        Map[i * MapColumns + j] = Wall(tft.color565(255, 0, 0), WallTextureB);
-        break;
-      case 'T':
-        Map[i * MapColumns + j] = Wall(tft.color565(255, 0, 0), WallTextureRGB);
-        break;
-      case '.':
-        x = (i << BitTile) + TileField;
-        y = (j << BitTile) + TileField;
-        break;
-      }
-    }
-  }
-}
-
 /* ________PLAYER________ */
 void PlayerMove(const float xAxis, const float yAxis)
 {
-  if (!((getWall(byte(x - playerSize) >> BitTile, byte(y) >> BitTile).isWall && xAxis > 0) ||
-        (getWall(byte(x + playerSize) >> BitTile, byte(y) >> BitTile).isWall && xAxis < 0)))
+  const byte mapByteX = byte(x) >> BitTile;
+  const byte mapByteY = byte(y) >> BitTile;
+  if (!((getWall(byte(x - playerSize) >> BitTile, mapByteY).isWall && xAxis > 0) ||
+        (getWall(byte(x + playerSize) >> BitTile, mapByteY).isWall && xAxis < 0)))
     x -= xAxis;
-  if (!((getWall(byte(x) >> BitTile, byte(y - playerSize) >> BitTile).isWall && yAxis > 0) ||
-        (getWall(byte(x) >> BitTile, byte(y + playerSize) >> BitTile).isWall && yAxis < 0)))
+  if (!((getWall(mapByteX, byte(y - playerSize) >> BitTile).isWall && yAxis > 0) ||
+        (getWall(mapByteX, byte(y + playerSize) >> BitTile).isWall && yAxis < 0)))
     y -= yAxis;
 }
 
@@ -390,7 +382,7 @@ void ChangeNumRaysHandle()
     NumRays <<= 1;
     UpdateCastSettings();
   }
-  if (DownButton.isPress() && NumRays > MinNumRays)
+  else if (DownButton.isPress() && NumRays > MinNumRays)
   {
     NumRays >>= 1;
     UpdateCastSettings();
@@ -405,7 +397,7 @@ void ChangeWidthHandle()
     NumRays = GameWidth;
     UpdateCastSettings();
   }
-  if (DownButton.isPress() && GameWidth > MinGameWidth)
+  else if (DownButton.isPress() && GameWidth > MinGameWidth)
   {
     GameWidth >>= 1;
     NumRays = GameWidth;
@@ -420,7 +412,7 @@ void ChangeHeightHandle()
     GameHeight <<= 1;
     UpdateCastSettings();
   }
-  if (DownButton.isPress() && GameHeight > MinGameHeight)
+  else if (DownButton.isPress() && GameHeight > MinGameHeight)
   {
     GameHeight >>= 1;
     UpdateCastSettings();
@@ -454,22 +446,22 @@ void InputHandle()
       break;
     }
   }
-  // if (SelectButton.isHolded())
-  // {
-  //   if (isFullScreenGame)
-  //   {
-  //     GameWidth = MaxGameWidth;
-  //     GameHeight = MaxGameHeight;
-  //   }
-  //   else
-  //   {
-  //     GameWidth = DisplayWidth;
-  //     GameHeight = DisplayHeight;
-  //   }
-  //   NumRays = GameWidth;
-  //   isFullScreenGame = !isFullScreenGame;
-  //   UpdateCastSettings();
-  // }
+  if (SelectButton.isHolded())
+  {
+    if (isFullScreenGame)
+    {
+      GameWidth = MaxGameWidth;
+      GameHeight = MaxGameHeight;
+    }
+    else
+    {
+      GameWidth = DisplayWidth;
+      GameHeight = DisplayHeight;
+    }
+    NumRays = GameWidth;
+    isFullScreenGame = !isFullScreenGame;
+    UpdateCastSettings();
+  }
 }
 
 /* ________RAY_CASTING________ */
@@ -495,8 +487,8 @@ void RaysCasting()
 
     float depth_v, depth_h = 0;
     float yv, xh;
-    uint16_t texture_v = BlackColor;
-    uint16_t texture_h = BlackColor;
+    uint16_t color_v = BlackColor;
+    uint16_t color_h = BlackColor;
 
     boolean isV_Collided = false;
     boolean isH_Collided = false;
@@ -513,7 +505,7 @@ void RaysCasting()
           isV_Collided = true;
         else if (wallV.isWall)
         {
-          texture_v = wallV.color;
+          color_v = wallV.color;
           isV_Collided = true;
         }
         if (depth_v > MaxDepth || MapColumnsTile < yv || yv < 0 || px < 0 || px > MapRowsTile)
@@ -529,7 +521,7 @@ void RaysCasting()
           isH_Collided = true;
         else if (wallH.isWall)
         {
-          texture_h = wallH.color;
+          color_h = wallH.color;
           isH_Collided = true;
         }
         if (depth_h > MaxDepth || MapRowsTile < xh || xh < 0 || py > MapColumnsTile || py < 0)
@@ -542,7 +534,7 @@ void RaysCasting()
 
     const uint16_t proect_height = PrectCoeff / depth;
     castedWalls[ray][0] = (proect_height < GameHeight) ? proect_height : GameHeight;
-    castedWalls[ray][1] = (depth >= MaxDepth - Tile) ? BlackColor : ((depth_v < depth_h) ? texture_v : texture_h);
+    castedWalls[ray][1] = (depth >= MaxDepth - Tile) ? BlackColor : ((depth_v < depth_h) ? color_v : color_h);
 
     // Updating the angle
     cur_angle += DeltaAngle;
@@ -569,27 +561,29 @@ void setup()
   UpdateCastSettings();
   SetSettingsButton();
 
-  pinMode(SelectButtonPin, INPUT_PULLUP);
+  for (;;)
+  {
+    // DEBUG(freeRam());
+    fps_count++;
+
+    // Update
+    ButtonsTick();
+    InputHandle();
+
+    // Rendering
+    RaysCasting();
+    DrawFPS();
+
+    // FPS counter
+    if (millis() - tick >= 1000)
+    {
+      tick += 1000;
+      fps = fps_count;
+      fps_count = 0;
+    }
+  }
 }
 
 void loop()
 {
-  // DEBUG(freeRam());
-  fps_count++;
-
-  // Update
-  Tick();
-  InputHandle();
-
-  // Rendering
-  RaysCasting();
-  DrawUI();
-
-  // FPS counter
-  if (millis() - tick >= 1000)
-  {
-    tick += 1000;
-    fps = fps_count;
-    fps_count = 0;
-  }
 }
