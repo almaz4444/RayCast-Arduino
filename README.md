@@ -2,6 +2,8 @@
 
 # Arduino Raycasting Game
 
+_This repository has been rewritten on `PlatformIO` to speed up work. You can claim it [here](https://github.com/almaz4444/RayCast-Arduino/tree/RayCast-Arduino-PlatformIO)_
+
 This is a raycasting game implementation for the Arduino boards. The game consists of a 2D map with walls and player movement using a joystick. The game has a raycasting engine to render the 3D environment based on the 2D map, and a simple UI with an FPS counter and other settings.
 
 Tested on `160x128px` TFT display with ``ST7789`` driver under `Arduino Mega 2560 (~20fps)` and `Arduino due (~64fps)` in standard mode.
